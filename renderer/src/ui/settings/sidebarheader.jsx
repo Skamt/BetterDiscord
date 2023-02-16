@@ -4,7 +4,7 @@ import HistoryIcon from "../icons/history";
 import Modals from "../modals";
 
 const Tooltip = WebpackModules.getByPrototypes("renderTooltip");
-
+if(!SidebarComponents) debugger;
 export default class SettingsTitle extends React.Component {
     renderHeader() {
         return <h2 className="bd-sidebar-header-label">BetterDiscord</h2>;
