@@ -23,20 +23,20 @@ export default function() {
 				const modules = Object.entries(arg[1]);
 				for (const [id, module] of modules) {
 					if (filters.length === 0) {
+						console.log('done');
 						instance.push = oldPush;
 						break;
 					}
 					for (const filter of filters) {
 						if (filter(module)) {
-							console.log(module);
 							arg[1][id] = () => {};
-							filters.splice(filters.indexOf(filter), 0);
+							filters.splice(filters.indexOf(filter), 1);
 							break;
 						}
 					}
 				}
 
-				oldPush(arg);
+				return oldPush(arg);
 			}
 		}
 		const chunkName = "webpackChunkdiscord_app";
