@@ -4,7 +4,7 @@ const TerserPlugin = require("terser-webpack-plugin");
 module.exports = (env, argv) => ({
   mode: "development",
   target: "node",
-  devtool: argv.mode === "production" ? undefined : "eval-source-map",
+  devtool: false,
   entry: "./src/index.js",
   output: {
     filename: "injector.js",
