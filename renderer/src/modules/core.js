@@ -1,20 +1,29 @@
-import LocaleManager from "./localemanager";
+import Logger from "@common/logger";
 
-import Logger from "common/logger";
-import {Config, Changelog} from "data";
+import Config from "@data/config";
+import Changelog from "@data/changelog";
+
+import * as Builtins from "@builtins/builtins";
+
+import LoadingIcon from "../loadingicon";
+
+import LocaleManager from "./localemanager";
 import DOMManager from "./dommanager";
 import PluginManager from "./pluginmanager";
 import ThemeManager from "./thememanager";
 import Settings from "./settingsmanager";
-import * as Builtins from "builtins";
-import Modals from "../ui/modals";
-import FloatingWindows from "../ui/floatingwindows";
 import DataStore from "./datastore";
 import DiscordModules from "./discordmodules";
-import LoadingIcon from "../loadingicon";
-import Styles from "../styles/index.css";
+
+import IPC from "./ipc";
 import Editor from "./editor";
 import Updater from "./updater";
+
+import Styles from "@styles/index.css";
+
+import Modals from "@ui/modals";
+import FloatingWindows from "@ui/floatingwindows";
+
 
 export default new class Core {
     async startup() {
@@ -24,6 +33,8 @@ export default new class Core {
         Config.appPath = process.env.DISCORD_APP_PATH;
         Config.userData = process.env.DISCORD_USER_DATA;
         Config.dataPath = process.env.BETTERDISCORD_DATA_PATH;
+
+        IPC.getSystemAccentColor().then(value => DOMManager.injectStyle("bd-os-values", `:root {--os-accent-color: #${value};}`));
 
         // Load css early
         Logger.log("Startup", "Injecting BD Styles");
