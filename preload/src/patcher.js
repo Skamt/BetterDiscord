@@ -2,12 +2,9 @@ import { webFrame } from "electron";
 
 /* global window:false */
 
-export default function() {
-	const patcher = function() {
-		const filters = [
-			(module) => byStrings(["BrowserClient", "init", "sentry"], module),
-			(module) => byStrings(["TRACK", "FINGERPRINT", "handleFingerprint"], module)
-		];
+export default function () {
+	const patcher = function () {
+		const filters = [module => byStrings(["BrowserClient", "init", "sentry"], module), module => byStrings(["TRACK", "FINGERPRINT", "handleFingerprint"], module)];
 
 		function byStrings(strings, module) {
 			const moduleString = module.toString();
@@ -19,31 +16,43 @@ export default function() {
 
 		function removeSentry(instance) {
 			const oldPush = instance.push;
-			instance.push = (arg) => {
+			instance.push = arg => {
 				const modules = Object.entries(arg[1]);
 				for (const [id, module] of modules) {
 					if (filters.length === 0) {
-						console.log('done');
+						console.log("done");
 						instance.push = oldPush;
 						break;
 					}
 					for (const filter of filters) {
 						if (filter(module)) {
-							arg[1][id] = () => {};
+							arg[1][id] = (e, t, n) => {
+								n.r(t);
+								n.d(t, {
+									usesClientMods: function () {
+										return () => {};
+									},
+									initSentry: function () {
+										return () => {};
+									}
+								});
+							};
 							filters.splice(filters.indexOf(filter), 1);
 							break;
 						}
 					}
 				}
 
-				return oldPush(arg);
-			}
+				return oldPush.call(instance, arg);
+			};
 		}
 		const chunkName = "webpackChunkdiscord_app";
-		const predefine = function(target, prop, effect) {
+		const predefine = function (target, prop, effect) {
 			const value = target[prop];
 			Object.defineProperty(target, prop, {
-				get() { return value; },
+				get() {
+					return value;
+				},
 				set(newValue) {
 					Object.defineProperty(target, prop, {
 						value: newValue,
@@ -68,28 +77,27 @@ export default function() {
 
 		if (!Reflect.has(window, chunkName)) {
 			predefine(window, chunkName, instance => {
-				predefine(instance, "push", () => {
-					instance.push([
-						[Symbol()], {},
-						require => {
-							require.d = (target, exports) => {
-								for (const key in exports) {
-									if (!Reflect.has(exports, key) || target[key]) continue;
+				instance.push([
+					[Symbol()],
+					{},
+					require => {
+						require.d = (target, exports) => {
+							for (const key in exports) {
+								if (!Reflect.has(exports, key) || target[key]) continue;
 
-									Object.defineProperty(target, key, {
-										get: () => exports[key](),
-										set: v => { exports[key] = () => v; },
-										enumerable: true,
-										configurable: true
-									});
-								}
-							};
-						}
-					]);
-
-					instance.pop();
-					removeSentry(instance);
-				});
+								Object.defineProperty(target, key, {
+									get: () => exports[key](),
+									set: v => {
+										exports[key] = () => v;
+									},
+									enumerable: true,
+									configurable: true
+								});
+							}
+						};
+					}
+				]);
+				removeSentry(instance);
 			});
 		}
 	};
