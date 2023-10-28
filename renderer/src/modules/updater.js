@@ -17,7 +17,7 @@ import Settings from "./settingsmanager";
 import PluginManager from "./pluginmanager";
 import ThemeManager from "./thememanager";
 import WebpackModules from "./webpackmodules";
-
+import fetch from "./api/fetch";
 import Toasts from "@ui/toasts";
 import Notices from "@ui/notices";
 import Modals from "@ui/modals";
