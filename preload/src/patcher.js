@@ -4,7 +4,11 @@ import { webFrame } from "electron";
 
 export default function () {
 	const patcher = function () {
-		const filters = [module => byStrings(["BrowserClient", "init", "sentry"], module), module => byStrings(["TRACK", "FINGERPRINT", "handleFingerprint"], module)];
+		const filters = [
+			module => byStrings(["BrowserClient", "init", "sentry"], module),
+			module => byStrings(["usesClientMods", "initSentry"], module), 
+			module => byStrings(["TRACK", "FINGERPRINT", "handleFingerprint"], module)
+		];
 
 		function byStrings(strings, module) {
 			const moduleString = module.toString();
