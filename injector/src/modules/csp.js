@@ -4,8 +4,8 @@ const whitelist = {
 
     // Discord includes unsafe-inline already
     script: [
-        "https://*.github.io",
-        "https://cdnjs.cloudflare.com" // Used for Monaco
+        // "https://*.github.io",
+        // "https://cdnjs.cloudflare.com" // Used for Monaco
     ],
 
     // Discord includes unsafe-inline already
