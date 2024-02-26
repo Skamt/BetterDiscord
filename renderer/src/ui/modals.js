@@ -157,6 +157,7 @@ export default class Modals {
      * @param {string} [options.cancelText=Cancel] - text for the cancel button
      * @param {callable} [options.onConfirm=NOOP] - callback to occur when clicking the submit button
      * @param {callable} [options.onCancel=NOOP] - callback to occur when clicking the cancel button
+     * @param {callable} [options.onClose=NOOP] - callback to occur when exiting the modal
      * @param {string} [options.key] - key used to identify the modal. If not provided, one is generated and returned
      * @returns {string} - the key used for this modal
      */
@@ -168,7 +169,7 @@ export default class Modals {
         if (content instanceof FormattableString) content = content.toString();
 
         const emptyFunction = () => {};
-        const {onConfirm = emptyFunction, onCancel = emptyFunction, confirmText = Strings.Modals.okay, cancelText = Strings.Modals.cancel, danger = false, key = undefined} = options;
+        const {onClose = emptyFunction, onConfirm = emptyFunction, onCancel = emptyFunction, confirmText = Strings.Modals.okay, cancelText = Strings.Modals.cancel, danger = false, key = undefined} = options;
 
         if (!this.ModalActions || !this.ConfirmationModal || !this.Markdown) {
             return this.default(title, content, [
@@ -197,7 +198,10 @@ export default class Modals {
                 confirmText: confirmText,
                 cancelText: cancelText,
                 onConfirm: onConfirm,
-                onCancel: onCancel
+                onCancel: onCancel,
+                onCloseCallback: () => {
+                    if (props?.transitionState === 1) onClose?.();
+                }
             }, props), React.createElement(ErrorBoundary, {}, content)));
         }, {modalKey: key});
         return modalKey;
