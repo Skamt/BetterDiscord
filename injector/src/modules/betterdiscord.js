@@ -13,9 +13,10 @@ const buildInfoFile = path.resolve(appPath, "..", "build_info.json");
 let dataPath = "";
 if (process.platform === "win32" || process.platform === "darwin") dataPath = path.join(electron.app.getPath("userData"), "..");
 else dataPath = process.env.XDG_CONFIG_HOME ? process.env.XDG_CONFIG_HOME : path.join(process.env.HOME, ".config"); // This will help with snap packages eventually
-dataPath = path.join(dataPath, "BetterDiscord") + "/";
+dataPath = `${path.join(dataPath, "BetterDiscord")}/`;
 
-export default class BetterDiscord {
+// biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
+export  default class BetterDiscord {
 	static getWindowPrefs() {
 		if (!fs.existsSync(buildInfoFile)) return {};
 		const buildInfo = __non_webpack_require__(buildInfoFile);
@@ -25,16 +26,16 @@ export default class BetterDiscord {
 	}
 
 	static getSetting(category, key) {
-		if (this._settings) return this._settings[category]?.[key];
+		if (BetterDiscord._settings) return BetterDiscord._settings[category]?.[key];
 
 		try {
 			const buildInfo = __non_webpack_require__(buildInfoFile);
 			const settingsFile = path.resolve(dataPath, "data", buildInfo.releaseChannel, "settings.json");
-			this._settings = __non_webpack_require__(settingsFile) ?? {};
-			return this._settings[category]?.[key];
+			BetterDiscord._settings = __non_webpack_require__(settingsFile) ?? {};
+			return BetterDiscord._settings[category]?.[key];
 		} catch (_) {
-			this._settings = {};
-			return this._settings[category]?.[key];
+			BetterDiscord._settings = {};
+			return BetterDiscord._settings[category]?.[key];
 		}
 	}
 
@@ -78,7 +79,7 @@ export default class BetterDiscord {
 
 		// When DOM is available, pass the renderer over the wall
 		browserWindow.webContents.on("dom-ready", () => {
-			this.injectRenderer(browserWindow);
+			BetterDiscord.injectRenderer(browserWindow);
 		});
 
 		// This is used to alert renderer code to onSwitch events
