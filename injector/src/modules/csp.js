@@ -61,6 +61,10 @@ const whitelist = {
         "data:", // Used for Monaco
     ],
 
+    frame: [
+        "https://*.youtube-nocookie.com",
+    ]
+
 };
 
 const types = Object.keys(whitelist);
