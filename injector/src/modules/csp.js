@@ -34,9 +34,10 @@ const whitelist = {
     // Discord includes several sources already including imgur and data:
     img: [
         "https://*.github.io",
+        "https://github.com",
         "https://ik.imagekit.io",
         "https://source.unsplash.com",
-        "https://raw.githubusercontent.com",
+        "https://*.githubusercontent.com",
         "https://svgur.com",
         "https://i.ibb.co",
         "https://rawgit.com",
