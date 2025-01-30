@@ -17,15 +17,13 @@ import ReactUtils from "@modules/api/reactutils";
 import Button from "@ui/base/button";
 import Modals from "@ui/modals";
 
-import AddonList from "@ui/settings/addonlist";
+import AddonPage from "@ui/settings/addonpage";
 import SettingsGroup from "@ui/settings/group";
 import SettingsTitle from "@ui/settings/title";
 import Header from "@ui/settings/sidebarheader";
 
 import Restore from "./icons/restore";
 import Text from "./base/text";
-// import SettingsPanel from "./settings/panel";
-
 
 function makeResetButton(collectionId, refresh) {
     const action = confirmReset(() => {
@@ -136,10 +134,11 @@ export default new class SettingsRenderer {
     }
 
     getAddonPanel(title, addonList, addonState, options = {}) {
-        return () => React.createElement(AddonList, Object.assign({}, {
+        return (props) => React.createElement(AddonPage, Object.assign({}, {
             title: title,
             addonList: addonList,
-            addonState: addonState
+            addonState: addonState,
+            ...props
         }, options));
     }
 
@@ -168,7 +167,6 @@ export default new class SettingsRenderer {
             for (const panel of Settings.panels.sort((a,b) => a.order > b.order ? 1 : -1)) {
                 if (panel.clickListener) panel.onClick = (event) => panel.clickListener(thisObject, event, returnValue);
                 if (!panel.className) panel.className = `bd-${panel.id}-tab`;
-                if (typeof(panel.label) !== "string") panel.label = panel.label.toString();
                 insert(panel);
             }
         });

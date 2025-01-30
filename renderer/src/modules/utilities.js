@@ -1,12 +1,15 @@
 import Logger from "@common/logger";
+import DiscordModules from "./discordmodules";
+import WebpackModules from "./webpackmodules";
+import Patcher from "./patcher";
 
+const native = WebpackModules.getModule(m => m.minimize && m.architecture);
 
 export default class Utilities {
     /**
      * Generates an automatically memoizing version of an object.
      * @author Zerebos
-     * @param {Object} object - object to memoize
-     * @returns {Proxy} the proxy to the object that memoizes properties
+     * @type {<T extends Object>(object: T) => T}
      */
     static memoizeObject(object) {
         const proxy = new Proxy(object, {
@@ -180,44 +183,6 @@ export default class Utilities {
     }
 
     /**
-     * Builds a classname string from any number of arguments. This includes arrays and objects.
-     * When given an array all values from the array are added to the list.
-     * When given an object they keys are added as the classnames if the value is truthy.
-     * Copyright (c) 2018 Jed Watson https://github.com/JedWatson/classnames MIT License
-     * @param {...Any} argument - anything that should be used to add classnames.
-     */
-    static className() {
-        const classes = [];
-        const hasOwn = {}.hasOwnProperty;
-
-        for (let i = 0; i < arguments.length; i++) {
-            const arg = arguments[i];
-            if (!arg) continue;
-
-            const argType = typeof arg;
-
-            if (argType === "string" || argType === "number") {
-                classes.push(arg);
-            }
-            else if (Array.isArray(arg) && arg.length) {
-                const inner = this.classNames.apply(null, arg);
-                if (inner) {
-                    classes.push(inner);
-                }
-            }
-            else if (argType === "object") {
-                for (const key in arg) {
-                    if (hasOwn.call(arg, key) && arg[key]) {
-                        classes.push(key);
-                    }
-                }
-            }
-        }
-
-        return classes.join(" ");
-    }
-
-    /**
      * Gets a nested value (if it exists) safely. Path should be something like `prop.prop2.prop3`.
      * Numbers can be used for arrays as well like `prop.prop2.array.0.id`.
      * @param {Object} obj - object to get nested value of
@@ -227,5 +192,38 @@ export default class Utilities {
         return path.split(".").reduce(function(ob, prop) {
             return ob && ob[prop];
         }, obj);
+    }
+
+    /**
+     * Shows the guild join modal, to join invites
+     * TODO: move this to the modals module
+     * @param {string} code 
+     */
+    static async showGuildJoinModal(code) {
+        const tester = /\.gg\/(.*)$/;
+        if (tester.test(code)) code = code.match(tester)[1];
+        
+        const {invite} = await DiscordModules.InviteActions.resolveInvite(code);
+        
+        if (!invite) {
+            Logger.debug("Utilities", "Failed to resolve invite:", code);
+            return;
+        }
+        
+        const minimize = Patcher.instead("BetterDiscord~showGuildJoinModal", native, "minimize", () => {});
+        const focus = Patcher.instead("BetterDiscord~showGuildJoinModal", native, "focus", () => {});
+        
+        try {
+            await DiscordModules.Dispatcher.dispatch({
+                type: "INVITE_MODAL_OPEN",
+                invite,
+                code,
+                context: "APP"
+            });
+        }
+        finally {
+            minimize();
+            focus();
+        }
     }
 }

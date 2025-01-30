@@ -7,7 +7,8 @@ export default [
             {type: "switch", id: "voiceDisconnect", value: false},
             {type: "switch", id: "showToasts", value: true},
             {type: "switch", id: "mediaKeys", value: false},
-            {type: "switch", id: "bdContextMenu", value: true}
+            {type: "switch", id: "bdContextMenu", value: true},
+            {type: "switch", id: "themeAttributes", value: true},
         ]
     },
     {
@@ -22,13 +23,24 @@ export default [
     },
     {
         type: "category",
+        id: "store",
+        collapsible: true,
+        shown: false,
+        settings: [
+            {type: "switch", id: "bdAddonStore", value: true},
+            {type: "switch", id: "alwaysEnable", value: false},
+            {type: "switch", id: "addonEmbeds", value: true}
+        ]
+    },
+    {
+        type: "category",
         id: "customcss",
         collapsible: true,
         shown: false,
         settings: [
             {type: "switch", id: "customcss", value: true},
             {type: "switch", id: "liveUpdate", value: false},
-            {type: "dropdown", id: "openAction", value: "settings", options: [{value: "settings"}, {value: "detached"}, {value: "system"}]}
+            {type: "dropdown", id: "openAction", value: "settings", options: [{value: "settings"}, {value: "detached"}, {value: "system"}]},
         ]
     },
     {
@@ -53,7 +65,9 @@ export default [
         settings: [
             {type: "switch", id: "transparency", value: false},
             {type: "switch", id: "removeMinimumSize", value: false},
-            {type: "switch", id: "frame", value: false, hidden: true}
+            {type: "switch", id: "frame", value: process.platform === "linux"},
+            // MacOS exclusive
+            {type: "switch", id: "inAppTrafficLights", value: false, disabled: process.env.BETTERDISCORD_NATIVE_FRAME === "true", hidden: process.platform !== "darwin"}
         ]
     },
     {
@@ -68,6 +82,7 @@ export default [
             {type: "switch", id: "reactDevTools", value: false, enableWith: "devTools"},
             {type: "switch", id: "inspectElement", value: false, enableWith: "devTools"},
             {type: "switch", id: "devToolsWarning", value: false, enableWith: "devTools"},
+            {type: "switch", id: "recovery", value: true, enableWith: "devTools"},
         ]
     },
     // {

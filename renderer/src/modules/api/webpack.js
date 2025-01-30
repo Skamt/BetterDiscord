@@ -66,6 +66,13 @@ const Webpack = {
         byRegex(regex) {return Filters.byRegex(regex);},
 
         /**
+         * Generates a function that filters by source code content.
+         * @param {string|RegExp} match String or RegExp to match against the module's source
+         * @returns {function} A filter that checks for matching source code
+         */
+        bySource(match) {return Filters.bySource(match);},
+
+        /**
          * Generates a function that filters by strings.
          * @param {...string} strings A list of strings
          * @returns {function} A filter that checks for a set of strings
@@ -101,12 +108,14 @@ const Webpack = {
      * @param {any} [options.target=null] Optional module target to look inside.
      * @param {Boolean} [options.defaultExport=true] Whether to return default export when matching the default export
      * @param {Boolean} [options.searchExports=false] Whether to execute the filter on webpack export getters. 
+     * @param {boolean} [options.raw=false] Whether to return the whole Module object when matching exports
      * @return {[Any, string]}
      */
     getWithKey(filter, options = {}) {
         if (("first" in options)) return Logger.error("BdApi.Webpack~getWithKey", "Unsupported option first.");
-        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~getWithKey", "Unsupported type used for options.defaultExport", options.defaultExport, "boolean expected.");
-        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~getWithKey", "Unsupported type used for options.searchExports", options.searchExports, "boolean expected.");
+        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~getWithKey", "Invalid type for options.defaultExport", options.defaultExport, "Expected: boolean");
+        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~getWithKey", "Invalid type for options.searchExports", options.searchExports, "Expected: boolean");
+        if (("raw" in options) && typeof(options.raw) !== "boolean") return Logger.error("BdApi.Webpack~getWithKey", "Invalid type for options.raw", options.raw, "Expected: boolean");
         return WebpackModules.getWithKey(filter, options);
     },
 
@@ -118,12 +127,14 @@ const Webpack = {
      * @param {boolean} [options.first=true] Whether to return only the first matching module
      * @param {boolean} [options.defaultExport=true] Whether to return default export when matching the default export
      * @param {boolean} [options.searchExports=false] Whether to execute the filter on webpack exports
+     * @param {boolean} [options.raw=false] Whether to return the whole Module object when matching exports
      * @return {any}
      */
     getModule(filter, options = {}) {
-        if (("first" in options) && typeof(options.first) !== "boolean") return Logger.error("BdApi.Webpack~get", "Unsupported type used for options.first", options.first, "boolean expected.");
-        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~getModule", "Unsupported type used for options.defaultExport", options.defaultExport, "boolean expected.");
-        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~getModule", "Unsupported type used for options.searchExports", options.searchExports, "boolean expected.");
+        if (("first" in options) && typeof(options.first) !== "boolean") return Logger.error("BdApi.Webpack~get", "Invalid type for options.first", options.first, "Expected: boolean");
+        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~getModule", "Invalid type for options.defaultExport", options.defaultExport, "Expected: boolean");
+        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~getModule", "Invalid type for options.searchExports", options.searchExports, "Expected: boolean");
+        if (("raw" in options) && typeof(options.raw) !== "boolean") return Logger.error("BdApi.Webpack~getModule", "Invalid type for options.raw", options.raw, "Expected: boolean");
         return WebpackModules.getModule(filter, options);
     },
 
@@ -133,11 +144,13 @@ const Webpack = {
      * @param {object} [options] Options to configure the search
      * @param {Boolean} [options.defaultExport=true] Whether to return default export when matching the default export
      * @param {Boolean} [options.searchExports=false] Whether to execute the filter on webpack exports
+     * @param {boolean} [options.raw=false] Whether to return the whole Module object when matching exports
      * @return {any[]}
      */
     getModules(filter, options = {}) {
-        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~getModules", "Unsupported type used for options.defaultExport", options.defaultExport, "boolean expected.");
-        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~getModules", "Unsupported type used for options.searchExports", options.searchExports, "boolean expected.");
+        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~getModules", "Invalid type for options.defaultExport", options.defaultExport, "Expected: boolean");
+        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~getModules", "Invalid type for options.searchExports", options.searchExports, "Expected: boolean");
+        if (("raw" in options) && typeof(options.raw) !== "boolean") return Logger.error("BdApi.Webpack~getModules", "Invalid type for options.raw", options.raw, "Expected: boolean");
         return WebpackModules.getModule(filter, Object.assign(options, {first: false}));
     },
 
@@ -149,6 +162,7 @@ const Webpack = {
      * @param {boolean} [queries.first=true] Whether to return only the first matching module
      * @param {boolean} [queries.defaultExport=true] Whether to return default export when matching the default export
      * @param {boolean} [queries.searchExports=false] Whether to execute the filter on webpack exports
+     * @param {boolean} [queries.raw=false] Whether to return the whole Module object when matching exports
      * @return {any}
      */
     getBulk(...queries) {return WebpackModules.getBulk(...queries);},
@@ -161,12 +175,14 @@ const Webpack = {
      * @param {AbortSignal} [options.signal] AbortSignal of an AbortController to cancel the promise
      * @param {boolean} [options.defaultExport=true] Whether to return default export when matching the default export
      * @param {boolean} [options.searchExports=false] Whether to execute the filter on webpack exports
+     * @param {boolean} [options.raw=false] Whether to return the whole Module object when matching exports
      * @returns {Promise<any>}
      */
     waitForModule(filter, options = {}) {
-        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~waitForModule", "Unsupported type used for options.defaultExport", options.defaultExport, "boolean expected.");
-        if (("signal" in options) && !(options.signal instanceof AbortSignal)) return Logger.error("BdApi.Webpack~waitForModule", "Unsupported type used for options.signal", options.signal, "AbortSignal expected.");
-        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~waitForModule", "Unsupported type used for options.searchExports", options.searchExports, "boolean expected.");
+        if (("defaultExport" in options) && typeof(options.defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~waitForModule", "Invalid type for options.defaultExport", options.defaultExport, "Expected: boolean");
+        if (("signal" in options) && !(options.signal instanceof AbortSignal)) return Logger.error("BdApi.Webpack~waitForModule", "Invalid type for options.signal", options.signal, "AbortSignal expected.");
+        if (("searchExports" in options) && typeof(options.searchExports) !== "boolean") return Logger.error("BdApi.Webpack~waitForModule", "Invalid type for options.searchExports", options.searchExports, "Expected: boolean");
+        if (("raw" in options) && typeof(options.raw) !== "boolean") return Logger.error("BdApi.Webpack~waitForModule", "Invalid type for options.raw", options.raw, "Expected: boolean");
         return WebpackModules.getLazy(filter, options);
     },
 
@@ -176,6 +192,7 @@ const Webpack = {
      * @param {object} [options] Options to configure the search
      * @param {Boolean} [options.defaultExport=true] Whether to return default export when matching the default export
      * @param {Boolean} [options.searchExports=false] Whether to execute the filter on webpack exports
+     * @param {boolean} [options.raw=false] Whether to return the whole Module object when matching exports
      * @return {Any}
      */
     getByRegex(regex, options = {}) {
@@ -188,11 +205,32 @@ const Webpack = {
      * @param {object} [options] Options to configure the search
      * @param {Boolean} [options.defaultExport=true] Whether to return default export when matching the default export
      * @param {Boolean} [options.searchExports=false] Whether to execute the filter on webpack exports
+     * @param {boolean} [options.raw=false] Whether to return the whole Module object when matching exports
      * @return {Any[]}
      */
     getAllByRegex(regex, options = {}) {
         return WebpackModules.getModule(Filters.byRegex(regex), Object.assign({}, options, {first: true}));
     },
+
+    /**
+     * Gets a module's mangled properties by mapping them to friendly names.
+     * @template T The type of the resulting object with friendly property names.
+     * @memberof Webpack
+     * @param  {(exports: any, module: any, id: any) => boolean | string | RegExp} filter Filter to find the module. Can be a filter function, string, or RegExp for source matching.
+     * @param {Record<keyof T, (prop: any) => boolean>} mangled Object mapping desired property names to their filter functions.
+     * @param {object} [options] Options to configure the search.
+     * @param {boolean} [options.defaultExport=true] Whether to return default export when matching the default export.
+     * @param {boolean} [options.searchExports=false] Whether to execute the filter on webpack exports.
+     * @param {boolean} [options.raw=false] Whether to return the whole Module object when matching exports
+     * @returns {T} Object containing the mangled properties with friendly names.
+     */
+    getMangled(filter, mangled, options = {}) {
+        const {defaultExport = false, searchExports = false, raw = false} = options;
+        if (typeof(defaultExport) !== "boolean") return Logger.error("BdApi.Webpack~getMangled", "Invalid type for options.defaultExport", defaultExport, "Expected: boolean");
+        if (typeof(searchExports) !== "boolean") return Logger.error("BdApi.Webpack~getMangled", "Invalid type for options.searchExports", searchExports, "Expected: boolean");
+        if (typeof(raw) !== "boolean") return Logger.error("BdApi.Webpack~getMangled", "Invalid type for options.raw", raw, "Expected: boolean");
+        return WebpackModules.getMangled(filter, mangled, options);
+    },    
 
     /**
      * Finds a single module using properties on its prototype.
@@ -247,6 +285,26 @@ const Webpack = {
         const options = getOptions(strings);
 
         return WebpackModules.getModule(Filters.byStrings(...strings), options);
+    },
+
+    /**
+     * Finds a module using its source code.
+     * @param {...(String|RegExp)} searches - Strings or regular expressions to match in the source code
+     * @return {Any}
+     */
+    getBySource(...searches) {
+        const options = getOptions(searches);
+        return WebpackModules.getModule(Filters.bySource(...searches), options);
+    },
+
+    /**
+     * Finds all modules matching source code content.
+     * @param {...(String|RegExp)} searches - Strings or regular expressions to match in the source code
+     * @return {Any[]}
+     */
+    getAllBySource(...searches) {
+        const options = getOptions(searches, {first: false});
+        return WebpackModules.getModule(Filters.bySource(...searches), options);
     },
 
     /**

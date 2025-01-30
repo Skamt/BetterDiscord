@@ -1,3 +1,5 @@
+import Logger from "@common/logger";
+
 export default class DOMManager {
 
     /** Document/window width */
@@ -34,16 +36,33 @@ export default class DOMManager {
         return baseElement.querySelector(e);
     }
 
-    static createElement(tag, options = {}, child = null) {
-        const {className, id, target} = options;
-        const element = document.createElement(tag);
-        if (className) element.className = className;
-        if (id) element.id = id;
-        if (child) element.append(child);
-        if (target) this.getElement(target).append(element);
+    /**
+     * Utility function to make creating DOM elements easier. 
+     * Has backward compatibility with previous createElement implementation.
+     * 
+     * @param {string} type HTML tag name to create
+     * @param {object} [options={}] Options object to customize the element
+     * @param {string} [options.className] Class name to add to the element
+     * @param {string} [options.id] ID to set for the element
+     * @param {string|HTMLElement} [options.target] Target element or selector to append to
+     * @param {(Node|string|(Node|string)[])[]} children Child node to add
+     * @returns {HTMLElement} The created HTML element
+    */
+    static createElement(type, options = {}, ...children) {
+        const element = document.createElement(type);
+    
+        Object.assign(element, options);
+    
+        element.append(...children.flat());
+    
+        if (options.target) {
+            Logger.warn("DOM.createElement", `Usage of the "target" option has been deprecated and will be removed in the next version.`);
+            (typeof options.target === "string" ? document.querySelector(options.target) : options.target)?.append(element);
+        }
+    
         return element;
-    }
-
+    }  
+        
     /**
      * Parses a string of HTML and returns the results. If the second parameter is true,
      * the parsed HTML will be returned as a document fragment {@see https://developer.mozilla.org/en-US/docs/Web/API/DocumentFragment}.
@@ -130,7 +149,7 @@ export default class DOMManager {
     static animate({timing = _ => _, update, duration}) {
         const start = performance.now();
         
-        requestAnimationFrame(function animate(time) {
+        let id = requestAnimationFrame(function animate(time) {
             // timeFraction goes from 0 to 1
             let timeFraction = (time - start) / duration;
             if (timeFraction > 1) timeFraction = 1;
@@ -140,13 +159,16 @@ export default class DOMManager {
         
             update(progress); // draw it
         
-            if (timeFraction < 1) requestAnimationFrame(animate);
+            if (timeFraction < 1) id = requestAnimationFrame(animate);
         });
+
+        return () => cancelAnimationFrame(id);
     }
 
     /**
      * Adds a listener for when a node matching a selector is added to the document body.
      * The listener is automatically removed upon firing.
+     * The callback is given the matching element.
      * @param {string} selector - node to wait for
      * @param {callable} callback - function to be performed on event
      */
@@ -162,7 +184,7 @@ export default class DOMManager {
                     const childrenMatch = mutation.querySelector(selector);
                     if (directMatch || childrenMatch) {
                         observer.disconnect();
-                        return callback(directMatch ?? childrenMatch);
+                        return callback(directMatch || childrenMatch);
                     }
                 }
             }

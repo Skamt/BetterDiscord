@@ -16,6 +16,7 @@ import * as Legacy from "./legacy";
 import ContextMenu from "./contextmenu";
 import fetch from "./fetch";
 import Logger from "./logger";
+import CommandAPI from "./commands";
 
 import ColorInput from "@ui/settings/components/color";
 import DropdownInput from "@ui/settings/components/dropdown";
@@ -32,6 +33,7 @@ import ErrorBoundary from "@ui/errorboundary";
 import Text from "@ui/base/text";
 import Flex from "@ui/base/flex";
 import Button from "@ui/base/button";
+import Spinner from "@ui/spinner";
 
 const bounded = new Map();
 const PluginAPI = new AddonAPI(PluginManager);
@@ -40,6 +42,7 @@ const PatcherAPI = new Patcher();
 const DataAPI = new Data();
 const DOMAPI = new DOM();
 const ContextMenuAPI = new ContextMenu();
+const CommandsAPI = new CommandAPI();
 const DefaultLogger = new Logger();
 
 /**
@@ -65,6 +68,7 @@ const Components = {
     get Text() {return Text;},
     get Flex() {return Flex;},
     get Button() {return Button;},
+    get Spinner() {return Spinner;},
 };
 
 /**
@@ -88,6 +92,7 @@ export default class BdApi {
         this.Data = new Data(pluginName);
         this.DOM = new DOM(pluginName);
         this.Logger = new Logger(pluginName);
+        this.Commands = new CommandAPI(pluginName);
 
         bounded.set(pluginName, this);
     }
@@ -172,6 +177,12 @@ BdApi.ContextMenu = ContextMenuAPI;
  * @type Components
  */
 BdApi.Components = Components;
+
+/**
+ * An instance of {@link CommandAPI} for adding slash commands.
+ * @type CommandAPI
+ */
+BdApi.Commands = CommandsAPI;
 
 /**
  * An instance of {@link Net} for using network related tools.

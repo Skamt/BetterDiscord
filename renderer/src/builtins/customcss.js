@@ -19,7 +19,6 @@ import SettingsTitle from "@ui/settings/title";
 
 
 const UserSettings = WebpackModules.getByProps("updateAccount");
-const Dispatcher = DiscordModules.Dispatcher;
 
 export default new class CustomCSS extends Builtin {
     get name() {return "Custom CSS";}
@@ -121,6 +120,13 @@ export default new class CustomCSS extends Builtin {
         DataStore.saveCustomCSS(this.savedCss);
     }
 
+    open() {
+        if (this.isDetached) return;
+        if (this.nativeOpen) return this.openNative();
+        else if (this.startDetached) return this.openDetached(this.savedCss);
+        return UserSettings?.open?.(this.id);
+    }
+
     openNative() {
         electron.shell.openExternal(`file://${DataStore.customCSS}`);
     }
@@ -161,6 +167,6 @@ export default new class CustomCSS extends Builtin {
         });
         this.isDetached = true;
         UserSettings.close();
-        Dispatcher.dispatch({type: "LAYER_POP"});
+        DiscordModules.Dispatcher?.dispatch({type: "LAYER_POP"});
     }
 };

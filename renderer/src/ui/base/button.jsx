@@ -1,5 +1,6 @@
+import clsx from "clsx";
 import React from "@modules/react";
-import Utilities from "@modules/utilities";
+
 
 // S.Looks = y;
 // S.Colors = I;
@@ -62,7 +63,7 @@ export default function Button({
     }, [onClick]);
     
     return <button {...others} className={
-        Utilities.className(
+        clsx(
             "bd-button",
             className,
             look,
@@ -74,6 +75,7 @@ export default function Button({
         type={type === "button" ? null : type}
         onClick={disabled ? () => {} : handleClick}
         onKeyDown={disabled ? () => {} : onKeyDown}
+        disabled={disabled}
         >
         <div className="bd-button-content">{children}</div>
     </button>;

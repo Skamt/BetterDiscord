@@ -1,12 +1,10 @@
 import React from "@modules/react";
 import Strings from "@modules/strings";
 import Events from "@modules/emitter";
-import DataStore from "@modules/datastore";
 import DiscordModules from "@modules/discordmodules";
 import ipc from "@modules/ipc";
 
 import Button from "../base/button";
-import SettingsTitle from "./title";
 import AddonCard from "./addoncard";
 import Dropdown from "./components/dropdown";
 import Search from "./components/search";
@@ -21,7 +19,13 @@ import CheckIcon from "@ui/icons/check";
 import CloseIcon from "@ui/icons/close";
 
 import NoResults from "@ui/blankslates/noresults";
-import EmptyImage from "@ui/blankslates/emptyimage";
+import EmptySlate from "@ui/blankslates/empty";
+import Web from "@data/web";
+import Store from "@ui/icons/store";
+import {buildDirectionOptions, makeBasicButton, getState, saveState, AddonHeader, addonContext} from "./addonshared";
+import Settings from "@modules/settingsmanager";
+import Text from "@ui/base/text";
+import Caret from "@ui/icons/caret";
 
 const {useState, useCallback, useEffect, useReducer, useMemo} = React;
 
@@ -35,27 +39,22 @@ const buildSortOptions = () => [
     {label: Strings.Addons.isEnabled, value: "isEnabled"}
 ];
 
-const buildDirectionOptions = () => [
-    {label: Strings.Sorting.ascending, value: true},
-    {label: Strings.Sorting.descending, value: false}
-];
-
 
 function openFolder(folder) {
     ipc.openPath(folder);
 }
 
-function blankslate(type, onClick) {
-    const message = Strings.Addons.blankSlateMessage.format({link: `https://betterdiscord.app/${type}s`, type}).toString();
-    return <EmptyImage title={Strings.Addons.blankSlateHeader.format({type})} message={message}>
-        <Button size={Button.Sizes.LARGE} onClick={onClick}>{Strings.Addons.openFolder.format({type})}</Button>
-    </EmptyImage>;
-}
-
-function makeBasicButton(title, children, action) {
-    return <DiscordModules.Tooltip color="primary" position="top" text={title}>
-                {(props) => <Button {...props} size={Button.Sizes.NONE} look={Button.Looks.BLANK} className="bd-button" onClick={action}>{children}</Button>}
-            </DiscordModules.Tooltip>;
+function Blankslate({type, folder}) {
+    const {toggleStore} = React.useContext(addonContext);
+    const storeEnabled = Settings.get("settings", "store", "bdAddonStore");
+    const message = Strings.Addons.blankSlateMessage.format({link: Web.pages[`${type}s`], type}).toString();
+    const onClick = storeEnabled ? toggleStore : () => openFolder(folder);
+    const buttonLabel = storeEnabled ? Strings.Addons.openStore : Strings.Addons.openFolder;
+    return <EmptySlate title={Strings.Addons.blankSlateHeader.format({type})} message={storeEnabled ? "" : message}>
+        <Button size={Button.Sizes.LARGE} onClick={onClick}>
+            {buttonLabel.format({type: `${type[0].toUpperCase()}${type.substring(1)}`})}
+        </Button>
+    </EmptySlate>;
 }
 
 function makeControlButton(title, children, action, selected = false) {
@@ -64,20 +63,6 @@ function makeControlButton(title, children, action, selected = false) {
                     return <Button {...props} size={Button.Sizes.NONE} look={Button.Looks.BLANK} className={"bd-button bd-view-button" + (selected ? " selected" : "")} onClick={action}>{children}</Button>;
                 }}
             </DiscordModules.Tooltip>;
-}
-
-function getState(type, control, defaultValue) {
-    const addonlistControls = DataStore.getBDData("addonlistControls") || {};
-    if (!addonlistControls[type]) return defaultValue;
-    if (!addonlistControls[type].hasOwnProperty(control)) return defaultValue;
-    return addonlistControls[type][control];
-}
-
-function saveState(type, control, value) {
-    const addonlistControls = DataStore.getBDData("addonlistControls") || {};
-    if (!addonlistControls[type]) addonlistControls[type] = {};
-    addonlistControls[type][control] = value;
-    DataStore.setBDData("addonlistControls", addonlistControls);
 }
 
 function confirmDelete(addon) {
@@ -111,6 +96,29 @@ function confirmEnable(action, type) {
     };
 }
 
+function StoreCard() {    
+    const {title, toggleStore} = React.useContext(addonContext);
+    
+    if (!Settings.get("settings", "store", "bdAddonStore")) return;
+
+    return (
+        <div 
+            className="bd-store-card" 
+            onClick={toggleStore} 
+        >
+            <div className="bd-store-card-icon">
+                <Store size={24} />
+            </div>
+            <div className="bd-store-card-body">
+                <Text color={Text.Colors.HEADER_PRIMARY} className="bd-store-card-title">{Strings.Addons.openStore.format({type: title})}</Text>
+                <Text color={Text.Colors.HEADER_SECONDARY} className="bd-store-card-description">{Strings.Addons.storeMessage.format({type: title.toLocaleLowerCase()})}</Text>
+            </div>
+            <div className="bd-store-card-caret">
+                <Caret />
+            </div>
+        </div>
+    );
+}
 
 export default function AddonList({prefix, type, title, folder, addonList, addonState, onChange, reload, editAddon, deleteAddon, enableAll, disableAll}) {
     const [query, setQuery] = useState("");
@@ -194,15 +202,15 @@ export default function AddonList({prefix, type, title, folder, addonList, addon
     const hasResults = renderedCards.length !== 0;
 
     return [
-        <SettingsTitle key="title" text={isSearching ? `${title} - ${Strings.Addons.results.format({count: `${renderedCards.length}`})}` : title}>
+        <AddonHeader count={renderedCards.length} searching={isSearching}>
             <Search onChange={search} placeholder={`${Strings.Addons.search.format({type: `${renderedCards.length} ${title}`})}...`} />
-        </SettingsTitle>,
+        </AddonHeader>,
         <div className={"bd-controls bd-addon-controls"}>
             {/* <Search onChange={search} placeholder={`${Strings.Addons.search.format({type: title})}...`} /> */}
             <div className="bd-controls-basic">
-                {makeBasicButton(Strings.Addons.openFolder.format({type: title}), <FolderIcon />, openFolder.bind(null, folder))}
-                {makeBasicButton(Strings.Addons.enableAll, <CheckIcon size="20px" />, confirmEnable(enableAll, title))}
-                {makeBasicButton(Strings.Addons.disableAll, <CloseIcon size="20px" />, disableAll)}
+                {makeBasicButton(Strings.Addons.openFolder.format({type: title}), <FolderIcon />, openFolder.bind(null, folder), "folder")}
+                {makeBasicButton(Strings.Addons.enableAll, <CheckIcon size="20px" />, confirmEnable(enableAll, title), "enable-all")}
+                {makeBasicButton(Strings.Addons.disableAll, <CloseIcon size="20px" />, disableAll, "disable-all")}
             </div>
             <div className="bd-controls-advanced">
                 <div className="bd-addon-dropdowns">
@@ -221,7 +229,8 @@ export default function AddonList({prefix, type, title, folder, addonList, addon
                 </div>
             </div>
         </div>,
-        !hasAddonsInstalled && blankslate(type, () => openFolder(folder)),
+        <StoreCard />,
+        !hasAddonsInstalled && <Blankslate type={type} folder={folder} />,
         isSearching && !hasResults && hasAddonsInstalled && <NoResults />,
         hasAddonsInstalled && <div key="addonList" className={"bd-addon-list" + (view == "grid" ? " bd-grid-view" : "")}>{renderedCards}</div>
     ];
