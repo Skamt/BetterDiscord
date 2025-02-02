@@ -33,6 +33,7 @@ const whitelist = {
 
     // Discord includes several sources already including imgur and data:
     img: [
+        "https://betterdiscord.app",
         "https://*.github.io",
         "https://github.com",
         "https://ik.imagekit.io",
