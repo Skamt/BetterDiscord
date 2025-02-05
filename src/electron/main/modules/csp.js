@@ -1,7 +1,9 @@
 import electron from "electron";
 
 const whitelist = {
-
+	connect:[
+		"https://api.github.com"
+	],
     // Discord includes unsafe-inline already
     script: [
         // "https://*.github.io",
