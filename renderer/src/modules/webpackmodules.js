@@ -5,6 +5,7 @@
  * @version 0.0.2
  */
 import Logger from "@common/logger";
+import DataStore from "@modules/datastore";
 
 /**
  * Checks if a given module matches a set of parameters.
@@ -208,6 +209,28 @@ export default class WebpackModules {
         }
     });
 
+    static stackPluginRegex = /\/([^\/]+)\.plugin\.js(:\d+:\d+)/g;
+
+    static getIdFromStack() {
+        let stack = new Error().stack;
+
+        let matches = stack.matchAll(this.stackPluginRegex);
+        let prev = null;
+        let id = null;
+
+        // find the earliest plugin to be in the call stack 
+        for(let match of matches) {
+            if(match[1] != prev) {
+                prev = match[1];
+                id = match[1] + match[2];
+            }
+        }
+
+        return id;
+    }
+
+    static cache = DataStore.getWebpackCache();
+
     /**
      * Finds a module using a filter function.
      * @param {function} filter A function to use to filter modules
@@ -223,18 +246,16 @@ export default class WebpackModules {
         const wrappedFilter = wrapFilter(filter);
 
         const modules = this.getAllModules();
-        const rm = [];
-        const indices = Object.keys(modules);
-        for (let i = 0; i < indices.length; i++) {
-            const index = indices[i];
-            if (!modules.hasOwnProperty(index)) continue;
-            
-            let module = null;
-            try {module = modules[index];}
-            catch {continue;}
 
+        let cacheId = null;
+        if(first) {
+            cacheId = options.cacheId;
+            if(cacheId === undefined) cacheId = this.getIdFromStack();
+        }
+
+        const checkModule = (module, index) => {
             const {exports} = module;
-            if (shouldSkipModule(exports)) continue;
+            if (shouldSkipModule(exports)) return null;
             
             if (typeof(exports) === "object" && searchExports && !exports.TypedArray) {
                 for (const key in exports) {
@@ -247,8 +268,7 @@ export default class WebpackModules {
                     if (wrappedFilter(wrappedExport, module, index)) foundModule = wrappedExport;
                     if (!foundModule) continue;
                     if (raw) foundModule = module;
-                    if (first) return foundModule;
-                    rm.push(foundModule);
+                    return foundModule;
                 }
             }
             else {
@@ -257,13 +277,55 @@ export default class WebpackModules {
                 if (exports.ZP && wrappedFilter(exports.ZP, module, index)) foundModule = defaultExport ? exports.ZP : exports;
                 if (exports.__esModule && exports.default && wrappedFilter(exports.default, module, index)) foundModule = defaultExport ? exports.default : exports;
                 if (wrappedFilter(exports, module, index)) foundModule = exports;
-                if (!foundModule) continue;
+                if (!foundModule) return null;
                 if (raw) foundModule = module;
-                if (first) return foundModule;
-                rm.push(foundModule);
+                return foundModule;
             }
 
+            return null;
+        }
 
+        // attempt to use the cache, if available
+        const getCachedModule = () => {
+            const index = this.cache[cacheId];
+            if(!index) return;
+
+            if (!modules.hasOwnProperty(index)) return;
+
+            let module = null;
+            try {module = modules[index];}
+            catch {return;}
+
+            let foundModule = checkModule(module, index);
+            return foundModule;
+        }
+
+        if(first && cacheId) {
+            let cached = getCachedModule();
+            if(cached) return cached;
+        }
+
+        const rm = [];
+        const indices = Object.keys(modules);
+        for (let i = 0; i < indices.length; i++) {
+            const index = indices[i];
+            if (!modules.hasOwnProperty(index)) continue;
+            
+            let module = null;
+            try {module = modules[index];}
+            catch {continue;}
+
+            let foundModule = checkModule(module, index);
+            if(foundModule) {
+                if (first) {
+                    if(cacheId) {
+                        this.cache[cacheId] = index;
+                        DataStore.setWebpackCache(this.cache);
+                    }
+                    return foundModule;
+                }
+                rm.push(foundModule);
+            }
         }
         
         return first || rm.length == 0 ? undefined : rm;
