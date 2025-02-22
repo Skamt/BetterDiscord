@@ -14,9 +14,9 @@ const buildInfoFile = path.resolve(appPath, "..", "build_info.json");
 let dataPath = "";
 if (process.platform === "win32" || process.platform === "darwin") dataPath = path.join(electron.app.getPath("userData"), "..");
 else dataPath = process.env.XDG_CONFIG_HOME ? process.env.XDG_CONFIG_HOME : path.join(process.env.HOME, ".config"); // This will help with snap packages eventually
-dataPath = path.join(dataPath, "BetterDiscord") + "/";
+dataPath = `${path.join(dataPath, "BetterDiscord")}/`;
 
-let hasCrashed = false;
+
 export default class BetterDiscord {
     static getWindowPrefs() {
         if (!fs.existsSync(buildInfoFile)) return {};
@@ -83,36 +83,24 @@ export default class BetterDiscord {
 
         // When DOM is available, pass the renderer over the wall
         browserWindow.webContents.on("dom-ready", () => {
-            if (!hasCrashed) return this.injectRenderer(browserWindow);
-
-            // If a previous crash was detected, show a message explaining why BD isn't there
-            electron.dialog.showMessageBox({
-                title: "Discord Crashed",
-                type: "warning",
-                message: "Something crashed your Discord Client",
-                detail: "BetterDiscord has automatically disabled itself just in case. To enable it again, restart Discord or click the button below.\n\nThis may have been caused by a plugin. Try moving all of your plugins outside the plugin folder and see if Discord still crashed.",
-                buttons: ["Try Again", "Open Plugins Folder", "Cancel"],
-            }).then((result)=>{
-                if (result.response === 0) {
-                    electron.app.relaunch();
-                    electron.app.exit();
-                }
-                if (result.response === 1) {
-                    if (process.platform === "win32") spawn("explorer.exe", [path.join(dataPath, "plugins")]);
-                    else electron.shell.openPath(path.join(dataPath, "plugins"));
-                }
-            });
-            hasCrashed = false;
-        });
+			this.injectRenderer(browserWindow);
+		});
 
         // This is used to alert renderer code to onSwitch events
         browserWindow.webContents.on("did-navigate-in-page", () => {
             browserWindow.webContents.send(IPCEvents.NAVIGATE);
         });
 
-        browserWindow.webContents.on("render-process-gone", () => {
-            hasCrashed = true;
-        });
+        browserWindow.webContents.on("render-process-gone", (e, info) => {
+			try {
+				electron.dialog.showMessageBox({
+					title: "Discord Crashed",
+					type: "warning",
+					message: "Something crashed your Discord Client",
+					detail: JSON.stringify(info, null, 4)
+				});
+			} catch {}
+		});
 
         // Seems to be windows exclusive. MacOS requires a build plist change
         if (electron.app.setAsDefaultProtocolClient("betterdiscord")) {

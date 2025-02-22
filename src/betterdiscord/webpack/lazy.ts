@@ -15,7 +15,7 @@ export function getLazy<T>(filter: Webpack.Filter, options: Webpack.LazyOptions 
 
         const listener: Webpack.Filter = (_, module) => {
             if (shouldSkipModule(module.exports)) return;
-
+            
             if (filter(module.exports, module, module.id)) {
                 resolve(raw ? module : module.exports);
                 cancel();
@@ -37,7 +37,7 @@ export function getLazy<T>(filter: Webpack.Filter, options: Webpack.LazyOptions 
 
                 if (filter(exported, module, module.id)) {
                     if (!defaultExport && defaultKey === key) {
-                        resolve(raw ? module : exported);
+                        resolve(module.exports);
                         cancel();
                         return;
                     }

@@ -16,4 +16,14 @@ contextBridge.exposeInMainWorld("BetterDiscordPreload", () => {
     return BdApi;
 });
 
+const M = require("module");
+const orig = M.prototype.require;
+M.prototype.require = function (id) {
+	if (id.includes("/common/crashReporterSetup")) {
+		console.log(id);
+		return null;
+	}
+	return orig.apply(this, [id]);
+};
+
 init();

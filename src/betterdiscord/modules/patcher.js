@@ -19,7 +19,7 @@
       * @method
       */
      static getPatchesByCaller(name) {
-         if (!name) return [];
+         if (!name) return this.patches;
          const patches = [];
          for (const patch of this.patches) {
              for (const childPatch of patch.children) {
@@ -112,6 +112,11 @@
          Object.assign(module[functionName], patch.originalFunction);
          module[functionName].__originalFunction = patch.originalFunction;
          module[functionName].toString = () => patch.originalFunction.toString();
+         Object.defineProperty(module[functionName],"patchers",{
+         	get(){
+         		return patch
+         	}
+         });
          this.patches.push(patch);
          return patch;
      }
