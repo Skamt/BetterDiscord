@@ -19,7 +19,7 @@ export default class FloatingWindows {
         const div = DOMManager.parseHTML(`<div id="floating-windows-layer">`);
         DOMManager.bdBody.append(div);
         // eslint-disable-next-line react/no-deprecated
-        ReactDOM.render(wrapped, div);
+        ReactDOM.createRoot(div).render(wrapped);
         hasInitialized = true;
     }
     

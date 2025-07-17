@@ -564,7 +564,7 @@ const addonStore = new class AddonStore {
      * @param {? boolean} firstRun
      */
     async requestAddons(firstRun = false) {
-        Logger.debug("AddonStore", "Requesting all addons");
+        console.log("AddonStore", "Requesting all addons");
 
         if (!(firstRun && Object.keys(this._cache.addons).length)) {
             this.addons.length = 0;
@@ -617,6 +617,7 @@ const addonStore = new class AddonStore {
                 "Pragma": "no-cache"
             }
         }, (err, req, body) => {
+			console.log("AddonStore request", err, req, body);
             window.removeEventListener("offline", offLineListener);
             if (failed) return;
 
@@ -639,6 +640,7 @@ const addonStore = new class AddonStore {
                 this.addons.length = 0;
 
                 for (const addon of json) {
+					console.log("AddonStore loop", addon);
                     this.addons.push(Addon.from(addon));
 
                     data.addons[addon.file_name.toLowerCase()] = addon;
@@ -652,6 +654,7 @@ const addonStore = new class AddonStore {
                 this.error = null;
             }
             catch (error) {
+				console.log("AddonStore error", error);
                 Logger.stacktrace("AddonStore", "Failed to request addons", error);
 
                 Toasts.show(t("Addons.failedToFetch"), {

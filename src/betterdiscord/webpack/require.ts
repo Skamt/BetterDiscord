@@ -60,6 +60,7 @@ window.webpackChunkdiscord_app.push([
     [Symbol("BetterDiscord")],
     {},
     (__webpack_require__: any) => {
+    	if(Error().stack.includes("libdiscore")) return;
         if ("b" in __webpack_require__) {
             webpackRequire = __webpack_require__;
         }

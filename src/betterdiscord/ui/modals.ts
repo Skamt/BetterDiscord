@@ -112,10 +112,12 @@ export default class Modals {
 
         if (Array.isArray(content) ? content.every(el => React.isValidElement(el)) : React.isValidElement(content)) {
             const container = modal.querySelector(".scroller")!;
-
+            let root =null;
             try {
                 // eslint-disable-next-line react/no-deprecated
-                ReactDOM.render(content as ReactElement, container);
+                root = ReactDOM.createRoot(container)
+
+                root.render(content as ReactElement);
             }
             catch (error) {
                 container.append(DOMManager.parseHTML(`<span style="color: red">There was an unexpected error. Modal could not be rendered.</span>`) as HTMLElement);
@@ -124,7 +126,7 @@ export default class Modals {
 
             DOMManager.onRemoved(container, () => {
                 // eslint-disable-next-line react/no-deprecated
-                ReactDOM.unmountComponentAtNode(container);
+                root.unmount(container);
             });
         }
         else {
@@ -321,10 +323,10 @@ export default class Modals {
         const div = DOMManager.parseHTML(`<div id="bd-modal-container">`) as HTMLElement;
         DOMManager.bdBody.append(div);
         // eslint-disable-next-line react/no-deprecated
-        ReactDOM.render(
-            [React.createElement(ErrorBoundary, {id: "makeStack", name: "Modals", hideError: true}, React.createElement(ModalStack))],
+        ReactDOM.createRoot(div).render(
+            [React.createElement(ErrorBoundary, {id: "makeStack", name: "Modals", hideError: true}, React.createElement(ModalStack))]
             // <ErrorBoundary id="makeStack" name="Modals" hideError={true}><ModalStack /></ErrorBoundary>,
-            div
+           
         );
         this.hasInitialized = true;
     }

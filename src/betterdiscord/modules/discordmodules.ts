@@ -14,7 +14,7 @@ import type ReactDOM from "react-dom";
 
 const DiscordModules = memoize({
     get React(): typeof React {return getByKeys(["createElement", "cloneElement"]) as typeof React;},
-    get ReactDOM(): typeof ReactDOM {return getByKeys(["render", "findDOMNode"]) as typeof ReactDOM;},
+    get ReactDOM(): typeof ReactDOM {return getByKeys(["createRoot"]) as typeof ReactDOM;},
     get ChannelActions() {return getByKeys(["selectChannel"]);},
     get LocaleStore() {return getStore("LocaleStore");},
     get UserStore() {return getStore("UserStore");},

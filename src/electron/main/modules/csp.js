@@ -1,6 +1,11 @@
 import electron from "electron";
 
 const whitelist = {
+	media:[
+		"https://*.spotifycdn.com",
+		"https://*.scdn.co",
+	],
+
 	connect:[
 		"https://api.github.com"
 	],
@@ -35,6 +40,8 @@ const whitelist = {
 
     // Discord includes several sources already including imgur and data:
     img: [
+        "https://*.spotifycdn.com",
+        "https://*.scdn.co",
         "https://betterdiscord.app",
         "https://*.github.io",
         "https://github.com",

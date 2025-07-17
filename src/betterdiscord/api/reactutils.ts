@@ -162,6 +162,7 @@ const ReactUtils: ReactUtils = {
 
             constructor(props: any) {
                 super(props);
+                this.ref = DiscordModules.React.createRef();
                 this.element = element;
                 this.state = {hasError: false};
             }
@@ -171,7 +172,7 @@ const ReactUtils: ReactUtils = {
             }
 
             componentDidMount() {
-                const refElement = (this.refs as any).element;
+                const refElement = this.ref.current;
                 if (Array.isArray(this.element)) {
                     this.element.forEach(el => refElement.appendChild(el));
                 }
@@ -183,7 +184,7 @@ const ReactUtils: ReactUtils = {
             render() {
                 return this.state.hasError ? null : DiscordModules.React.createElement("div", {
                     className: "react-wrapper",
-                    ref: "element"
+                    ref: this.ref
                 });
             }
         };

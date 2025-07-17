@@ -83,7 +83,8 @@ export default class BetterDiscord {
 
         // When DOM is available, pass the renderer over the wall
         browserWindow.webContents.on("dom-ready", () => {
-			this.injectRenderer(browserWindow);
+			// this.injectRenderer(browserWindow);
+			 setTimeout(()=>{this.injectRenderer(browserWindow);},5*1000);
 		});
 
         // This is used to alert renderer code to onSwitch events
