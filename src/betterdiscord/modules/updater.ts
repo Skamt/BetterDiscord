@@ -12,7 +12,7 @@ import {comparator as semverComparator, regex as semverRegex} from "@structs/sem
 import Events from "./emitter";
 import IPC from "./ipc";
 import {t} from "@common/i18n";
-import DataStore from "./datastore";
+import JsonStore from "@stores/json";
 import React from "./react";
 import Settings from "@stores/settings";
 import PluginManager from "./pluginmanager";
@@ -25,7 +25,7 @@ import UpdaterPanel from "@ui/updater";
 import Web from "@data/web";
 import type AddonManager from "./addonmanager";
 import type {Release} from "github";
-import type {Addon} from "betterdiscordweb";
+import type {BdWebAddon} from "betterdiscordweb";
 import {getByKeys} from "@webpack";
 
 
@@ -46,7 +46,7 @@ const getJSON = (url: string) => {
     });
 };
 
-const reducer = (acc: Record<string, {name: string; version: string; id: number;}> | Record<string, never>, addon: Addon) => {
+const reducer = (acc: Record<string, {name: string; version: string; id: number;}> | Record<string, never>, addon: BdWebAddon) => {
     if (addon.version === "Unknown") return acc;
     acc[addon.file_name] = {name: addon.name, version: addon.version, id: addon.id};
     return acc;
@@ -90,7 +90,7 @@ export default class Updater {
 
         if (!Settings.get("addons", "checkForUpdates")) return;
 
-        const hours = Settings.get("addons", "updateInterval");
+        const hours = Settings.get<number>("addons", "updateInterval");
         this.updateCheckInterval = setInterval(() => {
             CoreUpdater.checkForUpdate();
             PluginUpdater.checkAll();
@@ -147,7 +147,7 @@ export class CoreUpdater {
             return;
         }
 
-        let canaryUpdated: string | Date = DataStore.getBDData("canaryUpdated") as string;
+        let canaryUpdated: string | Date = JsonStore.get("misc", "canaryUpdated") as string;
         let remoteVersion = asset.updated_at;
         try {
             if (canaryUpdated) canaryUpdated = new Date(canaryUpdated);
@@ -185,7 +185,7 @@ export class CoreUpdater {
             buttons: [{
                 label: t("Notices.moreInfo"),
                 onClick: () => {
-                    close();
+                    close?.();
                     UserSettingsWindow?.open?.("updates");
                 }
             }]
@@ -209,7 +209,7 @@ export class CoreUpdater {
                     return resolve(body);
                 }));
 
-            const asarPath = path.join(DataStore.baseFolder, "betterdiscord.asar");
+            const asarPath = path.join(Config.get("bdPath"), "betterdiscord.asar");
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const fs = require("original-fs");
             fs.writeFileSync(asarPath, buff);
@@ -217,7 +217,7 @@ export class CoreUpdater {
             this.hasUpdate = false;
 
             // For canary, save the last updated data. For stable, overwrite the current version to prevent further updates
-            if (Settings.get("developer", "canary")) DataStore.setBDData("canaryUpdated", this.remoteVersion);
+            if (Settings.get("developer", "canary")) JsonStore.set("misc", "canaryUpdated", this.remoteVersion);
             else Config.set("version", this.remoteVersion);
 
             Modals.showConfirmationModal(t("Updater.updateSuccessful"), t("Modals.restartPrompt"), {
@@ -238,7 +238,7 @@ export class CoreUpdater {
 
 
 
-class AddonUpdater {
+export class AddonUpdater {
     manager: AddonManager;
     type: "plugin" | "theme";
     cache: Record<string, {name: string; version: string; id: number;}> | Record<string, never>;
@@ -268,7 +268,7 @@ class AddonUpdater {
 
     async updateCache() {
         this.cache = {};
-        const addonData = (await getJSON(Web.store[(this.type + "s") as keyof typeof Web.store] as string)) as Addon[];
+        const addonData = (await getJSON(Web.store[(this.type + "s") as keyof typeof Web.store] as string)) as BdWebAddon[];
         addonData.reduce(reducer, this.cache as Record<string, never>);
     }
 
@@ -322,7 +322,7 @@ class AddonUpdater {
             buttons: [{
                 label: t("Notices.moreInfo"),
                 onClick: () => {
-                    close();
+                    close?.();
                     UserSettingsWindow?.open?.("updates");
                 }
             }]

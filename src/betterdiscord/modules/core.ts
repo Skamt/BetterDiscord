@@ -12,7 +12,7 @@ import DOMManager from "./dommanager";
 import PluginManager from "./pluginmanager";
 import ThemeManager from "./thememanager";
 import Settings from "@stores/settings";
-import DataStore from "./datastore";
+import JsonStore from "@stores/json";
 import DiscordModules from "./discordmodules";
 
 import IPC from "./ipc";
@@ -25,7 +25,7 @@ import Modals from "@ui/modals";
 import FloatingWindows from "@ui/floatingwindows";
 import SettingsRenderer from "@ui/settings";
 import CommandManager from "./commandmanager";
-import NotificationUI from "@modules/notification";
+// import NotificationUI from "@ui/notifications";
 import InstallCSS from "@ui/customcss/mdinstallcss";
 
 export default new class Core {
@@ -40,9 +40,6 @@ export default new class Core {
         // Load css early
         Logger.log("Startup", "Injecting BD Styles");
         DOMManager.injectStyle("bd-stylesheet", Styles.toString());
-
-        Logger.log("Startup", "Initializing DataStore");
-        DataStore.initialize();
 
         Logger.log("Startup", "Initializing AddonStore");
         AddonStore.initialize();
@@ -60,8 +57,8 @@ export default new class Core {
         Logger.log("Startup", "Initializing CommandManager");
         CommandManager.initialize();
 
-        Logger.log("Startup", "Initializing NotificationUI");
-        NotificationUI.initialize();
+        // Logger.log("Startup", "Initializing NotificationUI");
+        // NotificationUI.initialize();
 
         Logger.log("Startup", "Initializing Internal InstallCSS");
         InstallCSS.initialize();
@@ -98,10 +95,10 @@ export default new class Core {
         Logger.log("Startup", "Collecting Startup Errors");
         Modals.showAddonErrors({plugins: pluginErrors, themes: themeErrors});
 
-        const previousVersion = DataStore.getBDData("version");
+        const previousVersion = JsonStore.get("misc", "version");
         if (Config.get("version") !== previousVersion) {
             Modals.showChangelogModal(Changelog);
-            DataStore.setBDData("version", Config.get("version"));
+            JsonStore.set("misc", "version", Config.get("version"));
         }
     }
 

@@ -1,6 +1,6 @@
 import React from "@modules/react";
 import Settings from "@stores/settings";
-import DataStore from "@modules/datastore";
+import JsonStore from "@stores/json";
 import {Filters, getByKeys, getLazy} from "@webpack";
 import Patcher from "@modules/patcher";
 
@@ -34,14 +34,14 @@ export default new class SettingsRenderer {
     }
 
     onDrawerToggle(collection: string, group: string, state: boolean) {
-        const drawerStates: Partial<Record<string, Record<string, boolean>>> = DataStore.getBDData("drawerStates") || {};
+        const drawerStates: Partial<Record<string, Record<string, boolean>>> = JsonStore.get("misc", "drawerStates") || {};
         if (!drawerStates[collection]) drawerStates[collection] = {};
         drawerStates[collection][group] = state;
-        DataStore.setBDData("drawerStates", drawerStates);
+        JsonStore.set("misc", "drawerStates", drawerStates);
     }
 
     getDrawerState(collection: string, group: string, defaultValue: boolean) {
-        const drawerStates: Partial<Record<string, Record<string, boolean>>> = DataStore.getBDData("drawerStates") || {};
+        const drawerStates: Partial<Record<string, Record<string, boolean>>> = JsonStore.get("misc", "drawerStates") || {};
         if (!drawerStates[collection]) return defaultValue;
         if (!drawerStates[collection].hasOwnProperty(group)) return defaultValue;
         return drawerStates[collection][group];
@@ -52,13 +52,9 @@ export default new class SettingsRenderer {
             onChange(categoryId, settingId, value);
 
             // Delay until after switch animation
-            // TODO: adjust settingscontext to do disable and more
             // customcss is here to let the tab show/hide
-            // devTools is here for toggles that enableWith
-            // checkForUpdates also here for enableWith
-            // notificationEnabled also for enableWith
-            // lift state to top level properly to avoid this
-            if (settingId === "customcss" || settingId === "devTools" || settingId === "checkForUpdates" || settingId === "notificationEnabled") {
+            // since that component is out of our control/scope
+            if (settingId === "customcss") {
                 setTimeout(this.forceUpdate.bind(this), 250);
             }
         };
@@ -114,7 +110,7 @@ export default new class SettingsRenderer {
     }
 
     async patchVersionInformation() {
-        const versionDisplayModule = await getLazy<{Z(): void;}>(Filters.byStrings("remoteApp", "getVersion"), {defaultExport: false});
+        const versionDisplayModule = await getLazy<{Z(): void;}>(Filters.byStrings("copyValue", "RELEASE_CHANNEL"), {defaultExport: false});
         if (!versionDisplayModule?.Z) return;
 
         Patcher.after("SettingsManager", versionDisplayModule, "Z", () => {

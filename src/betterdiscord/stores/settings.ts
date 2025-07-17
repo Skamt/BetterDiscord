@@ -2,14 +2,13 @@ import Logger from "@common/logger";
 
 import SettingsConfig, {type DropdownSetting, type SettingsCategory} from "@data/settings";
 
-import DataStore from "@modules/datastore";
+import JsonStore from "./json";
 import Events from "@modules/emitter";
 import DiscordModules from "@modules/discordmodules";
 import {t} from "@common/i18n";
 import Store from "./base";
 import type {ComponentType} from "react";
 import type AddonManager from "@modules/addonmanager";
-
 
 export interface SettingsCollection {
     type: "collection";
@@ -34,7 +33,6 @@ export interface SettingsPanel {
 type State = Record<string, Record<string, any>>;
 
 export default new class SettingsManager extends Store {
-
     state: State = {};
     collections: SettingsCollection[] = [];
     panels: SettingsPanel[] = [];
@@ -61,7 +59,7 @@ export default new class SettingsManager extends Store {
         this.collections.splice(location, 1);
     }
 
-    registerPanel(id: string, name: string, options: {onClick?: () => void; element?: ComponentType; order: number; type?: "addon" | "settings"; manager?: AddonManager;}) {
+    registerPanel(id: string, name: string, options: {onClick?: (o: any) => void; element?: ComponentType; order: number; type?: "addon" | "settings"; manager?: AddonManager;}) {
         if (this.panels.find(p => p.id == id)) return Logger.error("Settings", "Already have a panel with id " + id);
         const {element, onClick, order = 1, type = "settings"} = options;
         const section: SettingsPanel = {
@@ -156,7 +154,7 @@ export default new class SettingsManager extends Store {
                         Object.defineProperty(opt, "label", {
                             enumerable: true,
                             get: () => {
-                                return t(`Collections.${collection.id}.${category.id}.${setting.id}.options.${opt.id}`) || t(`Collections.${collection.id}.${category.id}.${setting.id}.options.${opt.value}`) || optLabel;
+                                return t(`Collections.${collection.id}.${category.id}.${setting.id}.options.${opt.id ?? opt.value}`) || optLabel;
                             }
                         });
                     }
@@ -187,11 +185,11 @@ export default new class SettingsManager extends Store {
     }
 
     saveCollection(collection: string) {
-        DataStore.setData(collection, this.state[collection]);
+        JsonStore.set(collection as "settings", this.state[collection]);
     }
 
     loadCollection(id: string) {
-        const previousState = DataStore.getData(id) as Partial<State>;
+        const previousState = JsonStore.get(id as "settings") as Partial<State>;
         if (!previousState) return this.saveCollection(id);
         for (const category in this.state[id]) {
             if (!previousState[category]) Object.assign(previousState, {[category]: this.state[id][category]});
@@ -246,14 +244,14 @@ export default new class SettingsManager extends Store {
         return this.collections.find(c => c.id == collection)?.settings.find(c => c.id == category)?.settings.find(s => s.id == id);
     }
 
-    get(collection: string, category: string, id?: string) {
+    get<T>(collection: string, category: string, id?: string): T {
         if (arguments.length == 2) {
             id = category;
             category = collection;
             collection = "settings";
         }
-        if (!this.state[collection] || !this.state[collection][category]) return false;
-        return this.state[collection][category][id!];
+        if (!this.state[collection] || !this.state[collection][category]) return false as T;
+        return this.state[collection][category][id!] as T;
     }
 
     set(collection: string, category: string, id: string | unknown, value?: unknown): any {
