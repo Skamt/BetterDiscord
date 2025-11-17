@@ -22,9 +22,9 @@ const moduleConfigs: Record<string, EntryPoint> = {
     betterdiscord: {"in": "src/betterdiscord/index.ts", "out": "betterdiscord"},
     main: {"in": "src/electron/main/index.ts", "out": "main"},
     preload: {"in": "src/electron/preload/index.ts", "out": "preload"},
-    editorPreload: {"in": "src/editor/preload.ts", "out": "editor/preload"},
-    editor: {"in": "src/editor/script.ts", "out": "editor/script"},
-    editorHtml: {"in": "src/editor/index.html", "out": "editor/index"}
+    // editorPreload: {"in": "src/editor/preload.ts", "out": "editor/preload"},
+    // editor: {"in": "src/editor/script.ts", "out": "editor/script"},
+    // editorHtml: {"in": "src/editor/index.html", "out": "editor/index"}
 };
 
 let modulesRequested = process.argv.filter(a => a.startsWith("--module=")).map(a => a.replace("--module=", ""));
@@ -53,7 +53,7 @@ function buildOptions() {
         logLevel: "info",
         treeShaking: true,
         charset: "utf8",
-        minify: isProduction,
+        minify: false,
         legalComments: "none",
         define: {
             "process.env.__VERSION__": JSON.stringify(pkg.version),
