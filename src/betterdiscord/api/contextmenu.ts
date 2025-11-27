@@ -24,7 +24,7 @@ startupComplete = Object.values(MenuComponents).every(v => v);
 
 if (!startupComplete) {
     const REGEX = /(function .{1,3}\(.{1,3}\){return null}){5}/;
-    const EXTRACT_REGEX = /\.type===.{1,3}\.(.{1,3})\)return .{1,3}\.push\((?:null!=.{1,3}\.props\..+?)?{type:"(.+?)",/g;
+    const EXTRACT_REGEX = /\.type===.{1,3}\.(.{1,3})\)(?:{let r=A\(n.props,t\);)?return .{1,3}\.push\((?:null!=.{1,3}\.props\..+?)?{type:"(.+?)",/g;
     const EXTRACT_GROUP_REGEX = /\.type===.{1,3}\.(.{1,3})\){.+{type:"groupstart"/;
 
     let menuItemsId;
