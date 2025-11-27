@@ -1,197 +1,388 @@
-import fs from "fs";
-import path from "path";
-import electron, { BrowserWindow } from "electron";
-import { spawn } from "child_process";
+import {Filters, getByKeys, getMangled, getModule, webpackRequire} from "@webpack";
+import Patcher from "@modules/patcher";
+import Logger from "@common/logger";
+import React from "@modules/react";
 
-import ReactDevTools from "./reactdevtools";
-import * as IPCEvents from "@common/constants/ipcevents";
 
-// Build info file only exists for non-linux (for current injection)
-const appPath = electron.app.getAppPath();
-const buildInfoFile = path.resolve(appPath, "..", "build_info.json");
+let startupComplete = false;
 
-// Locate data path to find transparency settings
+// TODO: actually do the typing
+// https://github.com/doggybootsy/vx/blob/main/packages/mod/src/betterdiscord/context-menu.tsx
+// https://github.com/doggybootsy/vx/blob/main/packages/mod/src/api/menu/components.ts
+const ModulesBundle = getByKeys(["MenuItem", "Menu"]);
+const MenuComponents = {
+    Separator: ModulesBundle?.MenuSeparator,
+    CheckboxItem: ModulesBundle?.MenuCheckboxItem,
+    RadioItem: ModulesBundle?.MenuRadioItem,
+    ControlItem: ModulesBundle?.MenuControlItem,
+    Group: ModulesBundle?.MenuGroup,
+    Item: ModulesBundle?.MenuItem,
+    Menu: ModulesBundle?.Menu,
+};
 
-let dataPath = "";
-if (process.platform === "win32" || process.platform === "darwin") dataPath = path.join(electron.app.getPath("userData"), "..");
-else dataPath = process.env.XDG_CONFIG_HOME ? process.env.XDG_CONFIG_HOME : path.join(process.env.HOME, ".config"); // This will help with snap packages eventually
-dataPath = `${path.join(dataPath, "BetterDiscord")}/`;
+startupComplete = Object.values(MenuComponents).every(v => v);
 
-// biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
-export default class BetterDiscord {
-	static _settings: Record<string, Record<string, any>>;
+if (!startupComplete) {
+    const REGEX = /(function .{1,3}\(.{1,3}\){return null}){5}/;
+    const EXTRACT_REGEX = /\.type===.{1,3}\.(.{1,3})\)return .{1,3}\.push\((?:null!=.{1,3}\.props\..+?)?{type:"(.+?)",/g;
+    const EXTRACT_GROUP_ITEM_REGEX = /\.type===.{1,3}\.(.{1,3})\){.+{type:"(groupstart|customitem)".+\.type===.{1,3}\.(.{1,3})\){.+?{type:"(groupstart|customitem)"/;
 
-	static getSetting(category: string, key: string) {
-		if (this._settings) return this._settings[category]?.[key];
+    let menuItemsId;
+    let menuParser = "";
 
-		try {
-			// eslint-disable-next-line @typescript-eslint/no-require-imports
-			const buildInfo = require(buildInfoFile);
-			const settingsFile = path.resolve(dataPath, "data", buildInfo.releaseChannel, "settings.json");
+    for (const key in webpackRequire.m) {
+        if (Object.prototype.hasOwnProperty.call(webpackRequire.m, key)) {
+            if (REGEX.test(webpackRequire.m[key].toString())) {
+                menuItemsId = key;
+                break;
+            }
+        }
+    }
 
-			// eslint-disable-next-line @typescript-eslint/no-require-imports
-			this._settings = require(settingsFile) ?? {};
-			return this._settings[category]?.[key];
-		} catch {
-			this._settings = {};
-			return this._settings[category]?.[key];
-		}
-	}
+    for (const key in webpackRequire.m) {
+        if (Object.prototype.hasOwnProperty.call(webpackRequire.m, key)) {
+            const string = webpackRequire.m[key].toString();
 
-	static ensureDirectories() {
-		const dataFolder = path.join(dataPath, "data");
-		if (!fs.existsSync(dataPath)) fs.mkdirSync(dataPath);
-		if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
-		if (!fs.existsSync(path.join(dataFolder, "stable"))) fs.mkdirSync(path.join(dataFolder, "stable"));
-		if (!fs.existsSync(path.join(dataFolder, "canary"))) fs.mkdirSync(path.join(dataFolder, "canary"));
-		if (!fs.existsSync(path.join(dataFolder, "ptb"))) fs.mkdirSync(path.join(dataFolder, "ptb"));
-		if (!fs.existsSync(path.join(dataFolder, "development"))) fs.mkdirSync(path.join(dataFolder, "development"));
-		if (!fs.existsSync(path.join(dataPath, "plugins"))) fs.mkdirSync(path.join(dataPath, "plugins"));
-		if (!fs.existsSync(path.join(dataPath, "themes"))) fs.mkdirSync(path.join(dataPath, "themes"));
-	}
+            if (string.includes(menuItemsId!) && string.includes("Menu API only allows Items and groups of Items as children")) {
+                menuParser = string;
+                break;
+            }
+        }
+    }
 
-	static async injectRenderer(browserWindow: BrowserWindow) {
-		const location = path.join(__dirname, "betterdiscord.js");
-		if (!fs.existsSync(location)) return; // TODO: cut a fatal log
-		const content = fs.readFileSync(location).toString();
-		const success = await browserWindow.webContents.executeJavaScript(`
-            (() => {
-                try {
-                    ${content}
-                    return true;
-                } catch(error) {
-                    console.error(error);
-                    return false;
+    const contextMenuComponents = webpackRequire(menuItemsId!);
+
+    for (const [, key, type] of menuParser.matchAll(EXTRACT_REGEX)) {
+        switch (type) {
+            case "separator": MenuComponents.Separator ??= contextMenuComponents[key]; break;
+            case "radio": MenuComponents.RadioItem ??= contextMenuComponents[key]; break;
+            case "checkbox": MenuComponents.CheckboxItem ??= contextMenuComponents[key]; break;
+            case "compositecontrol":
+            case "control": MenuComponents.ControlItem ??= contextMenuComponents[key]; break;
+        }
+    }
+
+    const match = menuParser.match(EXTRACT_GROUP_ITEM_REGEX);
+    if (match) {
+        MenuComponents.Group ??= contextMenuComponents[match[match[2] === "groupstart" ? 1 : 3]];
+        MenuComponents.Item ??= contextMenuComponents[match[match[2] === "customitem" ? 1 : 3]];
+    }
+
+    MenuComponents.Menu ??= getModule(Filters.byStrings("getContainerProps()", ".keyboardModeEnabled&&null!="), {searchExports: true});
+}
+
+startupComplete = Object.values(MenuComponents).every(v => v);
+
+const ContextMenuActions = (() => {
+    const out: any = {};
+
+    try {
+        Object.assign(out, getMangled(Filters.bySource("new DOMRect", "CONTEXT_MENU_CLOSE"), {
+            closeContextMenu: Filters.byStrings("CONTEXT_MENU_CLOSE"),
+            openContextMenu: Filters.byStrings("renderLazy")
+        }, {searchDefault: false}));
+
+        startupComplete &&= typeof (out.closeContextMenu) === "function" && typeof (out.openContextMenu) === "function";
+    }
+    catch (error) {
+        startupComplete = false;
+        Logger.stacktrace("ContextMenu~Components", "Fatal startup error:", error as Error);
+
+        Object.assign(out, {
+            closeContextMenu: () => {},
+            openContextMenu: () => {}
+        });
+    }
+
+    return out;
+})();
+
+class MenuPatcher {
+    static MAX_PATCH_ITERATIONS = 10;
+    static patches = {};
+    static subPatches = new WeakMap();
+
+    static initialize() {
+        if (!startupComplete) return Logger.warn("ContextMenu~Patcher", "Startup wasn't successfully, aborting initialization.");
+
+        const {module, key} = (() => {
+            const foundModule = getModule(m => Object.values(m).some(v => typeof v === "function" && v.toString().includes(`type:"CONTEXT_MENU_CLOSE"`)), {searchExports: false});
+            const foundKey = Object.keys(foundModule).find(k => foundModule[k].length === 3);
+
+            return {module: foundModule, key: foundKey};
+        })();
+
+        Patcher.before("ContextMenuPatcher", module, key, (_, methodArguments) => {
+            const promise = methodArguments[1];
+            methodArguments[1] = async function (...args: any[]) {
+                const render = await promise.apply(this, args);
+
+                return props => {
+                    const res = render(props);
+
+                    if (res?.props.navId) {
+                        MenuPatcher.runPatches(res.props.navId, res, props);
+                    }
+                    else if (typeof res?.type === "function") {
+                        MenuPatcher.patchRecursive(res, "type");
+                    }
+
+                    return res;
+                };
+            };
+        });
+    }
+
+    static patchRecursive(target, method, iteration = 0) {
+        if (iteration >= this.MAX_PATCH_ITERATIONS) return;
+
+        const proxyFunction = this.subPatches.get(target[method]) ?? (() => {
+            const originalFunction = target[method];
+            const depth = ++iteration;
+            function patch(...args: any[]) {
+                const res = originalFunction.apply(this, args);
+
+                if (!res) return res;
+
+                if (res.props?.navId ?? res.props?.children?.props?.navId) {
+                    MenuPatcher.runPatches(res.props.navId ?? res.props?.children?.props?.navId, res, args[0]);
                 }
-            })();
-            //# sourceURL=betterdiscord/betterdiscord.js
-        `);
+                else {
+                    const layer = res.props.children ? res.props.children : res;
 
-		if (!success) return; // TODO: cut a fatal log
-	}
+                    if (typeof layer?.type == "function") {
+                        MenuPatcher.patchRecursive(layer, "type", depth);
+                    }
+                }
 
-	static setup(browserWindow: BrowserWindow) {
-		// Setup some useful vars to avoid blocking IPC calls
-		try {
-			// eslint-disable-next-line @typescript-eslint/no-require-imports
-			process.env.DISCORD_RELEASE_CHANNEL = require(buildInfoFile).releaseChannel;
-		} catch {
-			process.env.DISCORD_RELEASE_CHANNEL = "stable";
-		}
+                return res;
+            }
 
-		// @ts-expect-error adding new property, don't want to override object
-		process.env.DISCORD_PRELOAD = browserWindow.__originalPreload;
-		process.env.DISCORD_APP_PATH = appPath;
-		process.env.DISCORD_USER_DATA = electron.app.getPath("userData");
-		process.env.BETTERDISCORD_DATA_PATH = dataPath;
+            patch._originalFunction = originalFunction;
+            Object.assign(patch, originalFunction);
+            this.subPatches.set(originalFunction, patch);
 
-		// When DOM is available, pass the renderer over the wall
-		browserWindow.webContents.on("dom-ready", () => {
-			// Temporary fix for new canary/ptb changes
-			setTimeout(() => BetterDiscord.injectRenderer(browserWindow), 11*1000);
-		});
+            return patch;
+        })();
 
-		browserWindow.webContents.on("render-process-gone", (e, info) => {
-			try {
-				// If a previous crash was detected, show a message explaining why BD isn't there
-				electron.dialog
-					.showMessageBox({
-						title: "Discord Crashed",
-						type: "warning",
-						message: "Something crashed your Discord Client",
-						detail: `${JSON.stringify(info, null, 4)}\nBetterDiscord has automatically disabled itself just in case. To enable it again, restart Discord or click the button below.\n\nThis may have been caused by a plugin. Try moving all of your plugins outside the plugin folder and see if Discord still crashed.`,
-						buttons: ["Try Again", "Open Plugins Folder", "Cancel"]
-					})
-					.then(result => {
-						if (result.response === 0) {
-							electron.app.relaunch();
-							electron.app.exit();
-						}
-						if (result.response === 1) {
-							if (process.platform === "win32") spawn("explorer.exe", [path.join(dataPath, "plugins")]);
-							else electron.shell.openPath(path.join(dataPath, "plugins"));
-						}
-					});
-			} catch {}
-		});
+        target[method] = proxyFunction;
+    }
 
-		// This is used to alert renderer code to onSwitch events
-		browserWindow.webContents.on("did-navigate-in-page", () => {
-			browserWindow.webContents.send(IPCEvents.NAVIGATE);
-		});
+    static runPatches(id, res, props) {
+        if (!this.patches[id]) return;
 
-		browserWindow.webContents.on("render-process-gone", (e, info) => {
-			try {
-				electron.dialog.showMessageBox({
-					title: "Discord Crashed",
-					type: "warning",
-					message: "Something crashed your Discord Client",
-					detail: JSON.stringify(info, null, 4)
-				});
-			} catch {}
-		});
+        for (const patch of this.patches[id]) {
+            try {
+                patch(res, props);
+            }
+            catch (error) {
+                Logger.error("ContextMenu~runPatches", `Could not run ${id} patch for`, patch, error);
+            }
+        }
+    }
 
-		// Seems to be windows exclusive. MacOS requires a build plist change
-		if (electron.app.setAsDefaultProtocolClient("betterdiscord")) {
-			// If application was opened via protocol, set process.env.BETTERDISCORD_PROTOCOL
-			const protocol = process.argv.find(arg => arg.startsWith("betterdiscord://"));
-			if (protocol) {
-				process.env.BETTERDISCORD_PROTOCOL = protocol;
-			}
+    static patch(id, callback) {
+        this.patches[id] ??= new Set();
+        this.patches[id].add(callback);
+    }
 
-			// I think this is how it works on MacOS
-			// But cant work still because of a build plist needs changed (I think?)
-			electron.app.on("open-url", (_, url) => {
-				if (url.startsWith("betterdiscord://")) {
-					browserWindow.webContents.send(IPCEvents.HANDLE_PROTOCOL, url);
-				}
-			});
-
-			electron.app.on("second-instance", (_, argv) => {
-				// Ignore multi instance
-				if (argv.includes("--multi-instance")) return;
-
-				const url = argv.find(arg => arg.startsWith("betterdiscord://"));
-
-				if (url) {
-					browserWindow.webContents.send(IPCEvents.HANDLE_PROTOCOL, url);
-				}
-			});
-		}
-	}
-
-	static disableMediaKeys() {
-		if (!BetterDiscord.getSetting("general", "mediaKeys")) return;
-		const originalDisable = electron.app.commandLine.getSwitchValue("disable-features") || "";
-		electron.app.commandLine.appendSwitch("disable-features", `${originalDisable ? "," : ""}HardwareMediaKeyHandling,MediaSessionService`);
-	}
+    static unpatch(id, callback) {
+        this.patches[id]?.delete(callback);
+    }
 }
 
-if (BetterDiscord.getSetting("developer", "reactDevTools")) {
-	electron.app.whenReady().then(async () => {
-		await ReactDevTools.install(dataPath);
-	});
+
+/**
+ * `ContextMenu` is a module to help patch and create context menus. Instance is accessible through the {@link BdApi}.
+ * @type ContextMenu
+ * @summary {@link ContextMenu} is a utility class for interacting with React internals.
+ * @name ContextMenu
+ */
+class ContextMenu {
+
+    /**
+     * Allows you to patch a given context menu. Acts as a wrapper around the `Patcher`.
+     *
+     * @param {string} navId Discord's internal `navId` used to identify context menus
+     * @param {function} callback Callback function that accepts the React render tree
+     * @returns {function} A function that automatically unpatches
+     */
+    patch(navId, callback) {
+        MenuPatcher.patch(navId, callback);
+
+        return () => MenuPatcher.unpatch(navId, callback);
+    }
+
+    /**
+     * Allows you to remove the patch added to a given context menu.
+     *
+     * @param {string} navId The original `navId` from patching
+     * @param {function} callback The original callback from patching
+     */
+    unpatch(navId, callback) {
+        MenuPatcher.unpatch(navId, callback);
+    }
+
+    /**
+     * Builds a single menu item. The only prop shown here is the type, the rest should
+     * match the actual component being built. View those to see what options exist
+     * for each, they often have less in common than you might think.
+     *
+     * @param {object} props Props used to build the item
+     * @param {string} [props.type="text"] Type of the item, options: text, submenu, toggle, radio, custom, separator
+     * @returns {object} The created component
+     *
+     * @example
+     * // Creates a single menu item that prints "MENU ITEM" on click
+     * ContextMenu.buildItem({
+     *      label: "Menu Item",
+     *      action: () => {console.log("MENU ITEM");}
+     * });
+     *
+     * @example
+     * // Creates a single toggle item that starts unchecked
+     * // and print the new value on every toggle
+     * ContextMenu.buildItem({
+     *      type: "toggle",
+     *      label: "Item Toggle",
+     *      checked: false,
+     *      action: (newValue) => {console.log(newValue);}
+     * });
+     */
+    buildItem(props) {
+        const {type} = props;
+        if (type === "separator") return React.createElement(MenuComponents.Separator);
+
+        let Component = MenuComponents.Item;
+        if (type === "submenu") {
+            if (!props.children) props.children = this.buildMenuChildren(props.render || props.items);
+        }
+        else if (type === "toggle" || type === "radio") {
+            Component = type === "toggle" ? MenuComponents.CheckboxItem : MenuComponents.RadioItem;
+            if (props.active) props.checked = props.active;
+        }
+        else if (type === "control") {
+            Component = MenuComponents.ControlItem;
+        }
+        if (!props.id) props.id = `${props.label.replace(/^[^a-z]+|[^\w-]+/gi, "-")}`;
+        if (props.danger) props.color = "danger";
+        if (props.onClick && !props.action) props.action = props.onClick;
+        props.extended = true;
+
+        // This is done to make sure the UI actually displays the on/off correctly
+        if (type === "toggle") {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const [active, doToggle] = React.useState(props.checked || false);
+            const originalAction = props.action;
+            props.checked = active;
+            props.action = function (ev) {
+                originalAction(ev);
+                doToggle(!active);
+            };
+        }
+
+        return React.createElement(Component, props);
+    }
+
+    /**
+     * Creates the all the items **and groups** of a context menu recursively.
+     * There is no hard limit to the number of groups within groups or number
+     * of items in a menu.
+     *
+     * @param {Array<object>} setup Array of item props used to build items. See {@link ContextMenu.buildItem}.
+     * @returns {Array<object>} Array of the created component
+     *
+     * @example
+     * // Creates a single item group item with a toggle item
+     * ContextMenu.buildMenuChildren([{
+     *      type: "group",
+     *      items: [{
+     *          type: "toggle",
+     *          label: "Item Toggle",
+     *          active: false,
+     *          action: (newValue) => {console.log(newValue);}
+     *      }]
+     * }]);
+     *
+     * @example
+     * // Creates two item groups with a single toggle item each
+     * ContextMenu.buildMenuChildren([{
+     *     type: "group",
+     *     items: [{
+     *         type: "toggle",
+     *         label: "Item Toggle",
+     *         active: false,
+     *         action: (newValue) => {
+     *             console.log(newValue);
+     *         }
+     *     }]
+     * }, {
+     *     type: "group",
+     *     items: [{
+     *         type: "toggle",
+     *         label: "Item Toggle",
+     *         active: false,
+     *         action: (newValue) => {
+     *             console.log(newValue);
+     *         }
+     *     }]
+     * }]);
+     */
+    buildMenuChildren(setup) {
+        const mapper = s => {
+            if (s.type === "group") return buildGroup(s);
+            return this.buildItem(s);
+        };
+        const buildGroup = function (group) {
+            const items = group.items.map(mapper).filter(i => i);
+            return React.createElement(MenuComponents.Group, null, items);
+        };
+        return setup.map(mapper).filter(i => i);
+    }
+
+    /**
+     * Creates the menu *component* including the wrapping `ContextMenu`.
+     * Calls {@link ContextMenu.buildMenuChildren} under the covers.
+     * Used to call in combination with {@link ContextMenu.open}.
+     *
+     * @param {Array<object>} setup Array of item props used to build items. See {@link ContextMenu.buildMenuChildren}.
+     * @returns {function} The unique context menu component
+     */
+    buildMenu(setup) {
+        return (props) => {return React.createElement(MenuComponents.Menu, props, this.buildMenuChildren(setup));};
+    }
+
+    /**
+     * Function that allows you to open an entire context menu. Recommended to build the menu with this module.
+     *
+     * @param {MouseEvent} event The context menu event. This can be emulated, requires target, and all X, Y locations.
+     * @param {function} menuComponent Component to render. This can be any React component or output of {@link ContextMenu.buildMenu}.
+     * @param {object} config Configuration/props for the context menu
+     * @param {string} [config.position="right"] Default position for the menu, options: "left", "right"
+     * @param {string} [config.align="top"] Default alignment for the menu, options: "bottom", "top"
+     * @param {function} [config.onClose] Function to run when the menu is closed
+     */
+    open(event, menuComponent, config) {
+        return ContextMenuActions.openContextMenu(event, function (e) {
+            return React.createElement(menuComponent, Object.assign({}, e, {onClose: ContextMenuActions.closeContextMenu}));
+        }, config);
+    }
+
+    /**
+     * Closes the current opened context menu immediately.
+     */
+    close() {ContextMenuActions.closeContextMenu();}
 }
 
-// eslint-disable-next-line accessor-pairs
-Object.defineProperty(global, "appSettings", {
-	set(setting) {
-		setting.set("DANGEROUS_ENABLE_DEVTOOLS_ONLY_ENABLE_IF_YOU_KNOW_WHAT_YOURE_DOING", true);
-		if (BetterDiscord.getSetting("window", "removeMinimumSize")) {
-			setting.set("MIN_WIDTH", 0);
-			setting.set("MIN_HEIGHT", 0);
-		} else {
-			setting.set("MIN_WIDTH", 940);
-			setting.set("MIN_HEIGHT", 500);
-		}
-		delete global.appSettings;
-		global.appSettings = setting;
-	},
-	configurable: true,
-	enumerable: false
-});
+Object.assign(ContextMenu.prototype, MenuComponents);
+Object.freeze(ContextMenu);
+Object.freeze(ContextMenu.prototype);
 
-declare global {
-	// eslint-disable-next-line no-var
-	var appSettings: any;
+try {
+    MenuPatcher.initialize();
 }
+catch (error) {
+    Logger.error("ContextMenu~Patcher", "Fatal error:", error);
+}
+
+export default ContextMenu;

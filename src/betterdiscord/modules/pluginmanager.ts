@@ -58,8 +58,11 @@ export default new class PluginManager extends AddonManager {
     }
 
     initialize() {
+    	const t = console.context();
+    	t.time("BD plugins");
         const errors = super.initialize();
         this.setupFunctions();
+    	t.timeEnd("BD plugins");
         return errors;
     }
 

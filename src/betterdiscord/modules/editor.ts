@@ -70,6 +70,7 @@ export default new class Editor {
     failedToLoad = false;
 
     async initialize() {
+    	return;
         if (this.initPromise) return this.initPromise;
 
         this.initPromise = this.loadMonaco();
