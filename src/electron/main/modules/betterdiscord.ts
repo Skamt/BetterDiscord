@@ -88,7 +88,7 @@ export default class BetterDiscord {
 		// When DOM is available, pass the renderer over the wall
 		browserWindow.webContents.on("dom-ready", () => {
 			// Temporary fix for new canary/ptb changes
-			setTimeout(() => BetterDiscord.injectRenderer(browserWindow), 1000);
+			setTimeout(() => BetterDiscord.injectRenderer(browserWindow), 11*1000);
 		});
 
 		browserWindow.webContents.on("render-process-gone", (e, info) => {
