@@ -265,7 +265,13 @@ class ContextMenu {
         else if (type === "control") {
             Component = MenuComponents.ControlItem;
         }
-        if (!props.id) props.id = `${props.label.replace(/^[^a-z]+|[^\w-]+/gi, "-")}`;
+        if (!props.id) {
+        	if(!props?.label){
+        		console.error("No id or Label", props);
+        		throw "No id or Label";
+        	}
+        	props.id = `${props.label.replace(/^[^a-z]+|[^\w-]+/gi, "-")}`;
+        }
         if (props.danger) props.color = "danger";
         if (props.onClick && !props.action) props.action = props.onClick;
         props.extended = true;

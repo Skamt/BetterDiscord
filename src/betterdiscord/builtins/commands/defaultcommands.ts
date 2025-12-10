@@ -15,14 +15,14 @@ export default new class DefaultCommands extends Builtin {
     get id() {return "defaultCommands";}
 
     async initialize() {
-        this.addCommands(
-            buildAddonCommand("plugin"),
-            buildAddonCommand("theme"),
-            DebugCommand,
-            RestartCommand,
-            SupportCommand,
-            CustomCSSCommand,
-            SettingsCommand
-        );
+        // this.addCommands(
+        //     buildAddonCommand("plugin"),
+        //     buildAddonCommand("theme"),
+        //     DebugCommand,
+        //     RestartCommand,
+        //     SupportCommand,
+        //     CustomCSSCommand,
+        //     SettingsCommand
+        // );
     }
 };
