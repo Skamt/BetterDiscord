@@ -35,15 +35,15 @@ interface Section {
 	onClick?: (t: any) => void;
 	tabPredicate?: () => boolean;
 }
-
+// Probably removed as an FYI
 interface PaneLayout {
 	buildLayout(): [];
-	render(): React.ReactNode;
-
+	StronglyDiscouragedCustomComponent(): React.ReactNode;
 	useTitle?(): React.ReactNode;
 }
 interface PanelLayout {
-	buildLayout(): [pane: PaneLayout];
+	buildLayout(): [] | [pane: PaneLayout];
+	StronglyDiscouragedCustomComponent(): React.ReactNode;
 	useTitle(): React.ReactNode;
 }
 
@@ -86,13 +86,13 @@ interface SidebarItemLayout {
 }
 
 interface SectionLayout {
-	useLabel(): React.ReactNode;
+	useTitle(): React.ReactNode;
 	buildLayout(): SidebarItemLayout[];
 	usePredicate?(): boolean;
 }
 
 interface LayoutBuilder {
-	pane(key: string, panel: PaneLayout): PaneLayout;
+	pane?(key: string, panel: PaneLayout): PaneLayout;
 	panel(key: string, panel: PanelLayout): PanelLayout;
 	sidebarItem(key: string, panel: SidebarItemLayout): SidebarItemLayout;
 	section(key: string, panel: SectionLayout): SectionLayout;
@@ -304,13 +304,21 @@ export default new (class SettingsRenderer {
 					let layout: [] | [panel: PanelLayout] = [];
 
 					if ("render" in item) {
-						const pane = layoutBuilder.pane(key, {
-							buildLayout: () => [],
-							render: item.render
-						});
+						let panelLayout: [] | [pane: PaneLayout] = [];
+
+						if (layoutBuilder.pane) {
+							const pane = layoutBuilder.pane(key, {
+								buildLayout: () => [],
+								StronglyDiscouragedCustomComponent: item.render,
+								useTitle: item.header
+							});
+
+							panelLayout = [pane];
+						}
 
 						const panel = layoutBuilder.panel(key, {
-							buildLayout: () => [pane],
+							buildLayout: () => panelLayout,
+							StronglyDiscouragedCustomComponent: item.render,
 							useTitle: item.header
 						});
 
