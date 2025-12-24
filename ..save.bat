@@ -1,1 +1,1 @@
-git add . && git commit -m "%TIME% - %DATE%" && git push
+git save

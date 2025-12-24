@@ -9,11 +9,11 @@ import DiscordNativePatch from "./discordnativepatch";
 patchDefine();
 DiscordNativePatch.init();
 
-let hasInitialized = false;
+let hasInitialized = 0;
 contextBridge.exposeInMainWorld("process", newProcess);
 contextBridge.exposeInMainWorld("BetterDiscordPreload", () => {
-    if (hasInitialized) return null;
-    hasInitialized = true;
+    if (hasInitialized >= 2) return null;
+    hasInitialized++;
     return BdApi;
 });
 

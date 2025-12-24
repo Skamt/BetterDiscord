@@ -22,15 +22,12 @@ Object.defineProperty(window.webpackChunkdiscord_app, "push", {
 	}
 });
 
-window.BDWatcher = {};
 function listenToModules(modules: Record<PropertyKey, RawModule>) {
 	for (const moduleId in modules) {
 		const originalModule = modules[moduleId];
 
-		window.BDWatcher[moduleId] = {};
 		modules[moduleId] = (module, exports, require) => {
 			try {
-				Object.assign(window.BDWatcher[moduleId], { m: modules[moduleId], originalModule, module, exports, moduleId });
 				Reflect.apply(originalModule, null, [module, exports, require]);
 
 				const listeners = [...lazyListeners];
@@ -44,10 +41,7 @@ function listenToModules(modules: Record<PropertyKey, RawModule>) {
 			} catch (error) {
 				Logger.stacktrace("WebpackModules", "Could not patch pushed module", error as Error);
 			} finally {
-				window.BDWatcher[moduleId].finally = {};
-				window.BDWatcher[moduleId].finally.original = originalModule;
 				require.m[moduleId] = originalModule;
-				window.BDWatcher[moduleId].finally.afterRequire = require.m[moduleId];
 			}
 		};
 
