@@ -129,16 +129,18 @@ export default new (class BDContextMenu extends Builtin {
 		const toggles = addons.map(addon => {
 			const name = addon.name || addon.getName();
 			const hasSettings = (addon as Plugin).instance && typeof (addon as Plugin).instance.getSettingsPanel === "function";
-
+			const isEnabled = manager.isEnabled(name);
+			const isPartial = manager.getAddon(name)?.partial ?? false;
 			return {
 				type: "submenu",
 				label: name,
+				color: !isEnabled || isPartial ? "danger" : "default",
 				items: [
 					{
 						type: "toggle",
-						label: manager.isEnabled(name) ? "Enabled" : "Disabled",
-						disabled: manager.getAddon(name)?.partial ?? false,
-						active: manager.isEnabled(name),
+						label: isEnabled ? "Enabled" : "Disabled",
+						disabled: isPartial,
+						active: isEnabled,
 						action: e => {
 							manager.toggleAddon(name);
 						}
