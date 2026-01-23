@@ -2,6 +2,7 @@ import { Filters, getByKeys, getMangled, getModule, webpackRequire } from "@webp
 import Patcher from "@modules/patcher";
 import Logger from "@common/logger";
 import React from "@modules/react";
+import { getStore } from "@webpack";
 
 let startupComplete = false;
 
@@ -120,6 +121,8 @@ const ContextMenuActions = (() => {
 	return out;
 })();
 
+const UserSettingsProtoStore = getStore("UserSettingsProtoStore");
+// biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
 class MenuPatcher {
 	static MAX_PATCH_ITERATIONS = 10;
 	static patches = {};
@@ -139,7 +142,6 @@ class MenuPatcher {
 			const promise = methodArguments[1];
 			methodArguments[1] = async function (...args: any[]) {
 				const render = await promise.apply(this, args);
-
 				return props => {
 					const res = render(props);
 
@@ -192,6 +194,11 @@ class MenuPatcher {
 	}
 
 	static runPatches(id, res, props) {
+		try {
+			patchContextMenu(id, res, props);
+		} catch (e) {
+			console.log(e);
+		}
 		if (!this.patches[id]) return;
 
 		for (const patch of this.patches[id]) {
@@ -404,6 +411,19 @@ class ContextMenu {
 	close() {
 		ContextMenuActions.closeContextMenu();
 	}
+}
+
+function patchContextMenu(navId, retVal) {
+	if (!navId) return;
+	if (!UserSettingsProtoStore?.settings?.appearance?.developerMode) return;
+	retVal.props.children = Array.isArray(retVal.props.children) ? retVal.props.children : [retVal.props.children];
+	retVal.props.children.push(
+		ContextMenu.prototype.buildItem({
+			id: `copy-context-${navId}`,
+			label: `Copy Context ${navId}`,
+			action: () => DiscordNative?.clipboard?.copy(navId)
+		})
+	);
 }
 
 Object.assign(ContextMenu.prototype, MenuComponents);
