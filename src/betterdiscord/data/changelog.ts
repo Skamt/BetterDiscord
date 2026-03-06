@@ -14,18 +14,16 @@ export default {
             title: "Bugs Squashed",
             type: "fixed",
             items: [
-                "Fixed BetterDiscord not appearing in the `Settings Cog` context menu (right click menu)",
-                "Fixed `Version Info` strings in settings not appearing",
-                "Native titlebar matches Linux now",
+                "BetterDiscord now loads on macOS and Linux."
             ]
         },
         {
-            title: "Improvements",
-            type: "improved",
+            title: "New Features",
+            type: "added",
             items: [
-                "Allow context menu toggle to be preventDefaulted",
-                "ContextMenu API Rework",
-                "Rewrite Native Fetch"
+                "Added `--avatar-url-[size]` to avatars for theme attributes.",
+                "Added a bunch of new theme attributes to messages.",
+                "Added an utility for developers to easily patch react elements."
             ]
         }
     ]
