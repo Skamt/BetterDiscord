@@ -23,32 +23,49 @@ Object.defineProperty(window.webpackChunkdiscord_app, "push", {
 });
 
 function listenToModules(modules: Record<PropertyKey, RawModule>) {
-	for (const moduleId in modules) {
-		const originalModule = modules[moduleId];
 
-		modules[moduleId] = (module, exports, require) => {
-			try {
-				Reflect.apply(originalModule, null, [module, exports, require]);
+    for (const moduleId in modules) {
+        if (!Reflect.has(modules, moduleId)) continue;
+        if (Reflect.has(webpackRequire.c, moduleId)) continue;
 
-				const listeners = [...lazyListeners];
-				for (let i = 0; i < listeners.length; i++) {
-					try {
-						listeners[i](exports, module, module.id);
-					} catch (error) {
-						Logger.stacktrace("WebpackModules", "Could not fire callback listener:", error as Error);
-					}
-				}
-			} catch (error) {
-				Logger.stacktrace("WebpackModules", "Could not patch pushed module", error as Error);
-			} finally {
-				require.m[moduleId] = originalModule;
-			}
-		};
+        const originalModule = modules[moduleId];
 
-		Object.assign(modules[moduleId], originalModule, {
-			toString: () => originalModule.toString()
-		});
-	}
+        const runListeners: Webpack.RawModule = (module, exports, require) => {
+            try {
+                const listeners = [...lazyListeners];
+                for (let i = 0; i < listeners.length; i++) {
+                    try {listeners[i](exports, module, module.id);}
+                    catch (error) {
+                        Logger.stacktrace("WebpackModules", "Could not fire callback listener:", error as Error);
+                    }
+                }
+            }
+            catch (error) {
+                Logger.stacktrace("WebpackModules", "Could not patch pushed module", error as Error);
+            }
+            finally {
+                require.m[moduleId] = originalModule;
+            }
+        };
+
+        modules[moduleId] = (module, exports, require) => {
+            try {
+                Reflect.apply(originalModule, null, [module, exports, require]);
+            }
+            finally {
+                require.m[moduleId] = originalModule;
+                runListeners(module, exports, require);
+            }
+        };
+
+
+        const stringed = String(originalModule);
+
+        Object.assign(modules[moduleId], originalModule, {
+            toString: () => stringed,
+            __BD__: {runListeners, originalModule}
+        });
+    }
 }
 
 function handlePush(chunk: Webpack.ModuleWithoutEffect | Webpack.ModuleWithEffect) {
