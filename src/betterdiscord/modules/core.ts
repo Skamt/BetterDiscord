@@ -27,7 +27,7 @@ import SettingsRenderer from "@ui/settings";
 import CommandManager from "./commandmanager";
 // import NotificationUI from "@ui/notifications";
 import InstallCSS from "@ui/customcss/mdinstallcss";
-import {allModulesLoaded, getLazy, getStore, Stores} from "@webpack";
+import {allModulesLoaded, getStore, Stores} from "@webpack";
 import Patcher from "./patcher";
 
 export default new class Core {
