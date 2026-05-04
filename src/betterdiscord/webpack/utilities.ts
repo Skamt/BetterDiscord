@@ -2,8 +2,8 @@
 
 import type {Webpack} from "discord";
 import {bySource} from "./filter";
-import {getDeclaration, getModule} from "./searching";
-import {getDefaultKey, makeException, shouldSkipModule, wrapModuleFilter} from "./shared";
+import {getModule} from "./searching";
+import {getDefaultKey, makeException, shouldSkipModule, wrapModuleFilter, getDeclaration} from "./shared";
 import {webpackRequire} from "./require";
 import WebpackCache from "./cache";
 import {mapObject} from "@utils/object";

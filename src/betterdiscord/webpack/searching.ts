@@ -1,16 +1,7 @@
 import type {Webpack} from "discord";
-import {getDefaultKey, makeException, shouldSkipModule, wrapDeclarationFilter, wrapModuleFilter} from "./shared";
+import {getDeclaration, getDefaultKey, makeException, shouldSkipModule, wrapModuleFilter} from "./shared";
 import {webpackRequire} from "./require";
 import WebpackCache from "./cache";
-
-export function getDeclaration(module: Webpack.Module<any>, filter: Webpack.ExportedOnlyFilter) {
-    const wrappedFilter = wrapDeclarationFilter(filter);
-
-    for (const name in module.declarations) {
-        if (!wrappedFilter(module.declarations[name])) continue;
-        return module.declarations[name];
-    }
-}
 
 export function getMatched<T>(module: Webpack.Module<any>, filter: Webpack.ModuleFilter, options: Webpack.Options): T | undefined {
     const {defaultExport = true, searchExports = false, searchDefault = true, raw = false} = options;
