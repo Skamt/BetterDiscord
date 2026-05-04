@@ -68,8 +68,10 @@ function listenToModules(modules: Record<PropertyKey, RawModule>) {
 const {promise, resolve} = Promise.withResolvers<void>();
 export const allModulesLoaded = promise;
 
-let loadingModules = 0;
+let loadingModules = 1;
 let moduleLoadTimeout: ReturnType<typeof setTimeout> | null = null;
+requestIdleCallback(onLoadEnd);
+
 function onLoadStart() {
     loadingModules++;
     if (moduleLoadTimeout) {
@@ -86,7 +88,7 @@ function onLoadEnd() {
     moduleLoadTimeout = setTimeout(() => {
         resolve();
         Patcher.unpatchAll("WebpackRequire");
-    }, 300);
+    }, 50);
 }
 
 function patchModuleLoading(require: Webpack.Require) {
