@@ -237,30 +237,39 @@ export default class Patcher {
 		return this.pushChildPatch(caller, moduleToPatch, functionName, callback, Object.assign(options, { type: "instead" }));
 	}
 
-	/**
-	 * This method patches onto another function, allowing your code to run before, instead or after the original function.
-	 * Using this you are able to modify the incoming arguments before the original function is run as well as the return
-	 * value before the original function actually returns.
-	 *
-	 * @param {string} caller - Name of the caller of the patch function. Using this you can undo all patches with the same name using {@link module:Patcher.unpatchAll}. Use `""` if you don't care.
-	 * @param {object} moduleToPatch - Object with the function to be patched. Can also patch an object's prototype.
-	 * @param {string} functionName - Name of the method to be patched
-	 * @param {module:Patcher~patchCallback} callback - Function to run after the original method
-	 * @param {object} options - Object used to pass additional options.
-	 * @param {string} [options.type=after] - Determines whether to run the function `before`, `instead`, or `after` the original.
-	 * @param {string} [options.displayName] You can provide meaningful name for class/object provided in `what` param for logging purposes. By default, this function will try to determine name automatically.
-	 * @param {boolean} [options.forcePatch=true] Set to `true` to patch even if the function doesnt exist. (Adds noop function in place).
-	 * @return {module:Patcher~unpatch} Function with no arguments and no return value that should be called to cancel (unpatch) this patch. You should save and run it when your plugin is stopped.
-	 */
-	static pushChildPatch<M extends object, K extends Extract<keyof M, string>>(caller: string, moduleToPatch: M, functionName: K, callback: M[K] extends (...a: any[]) => any ? PatchCallback<M[K]> : never, options: PatchOptions = {}) {
-		const { type = "after", forcePatch = true } = options;
-		const module = this.resolveModule<M>(moduleToPatch);
-		if (!module) return null;
-		if (!module[functionName] && forcePatch) module[functionName] = function () {} as M[K];
-		if (!(module[functionName] instanceof Function)) return null;
+	
+    /**
+     * This method patches onto another function, allowing your code to run before, instead or after the original function.
+     * Using this you are able to modify the incoming arguments before the original function is run as well as the return
+     * value before the original function actually returns.
+     *
+     * @param {string} caller - Name of the caller of the patch function. Using this you can undo all patches with the same name using {@link module:Patcher.unpatchAll}. Use `""` if you don't care.
+     * @param {object} moduleToPatch - Object with the function to be patched. Can also patch an object's prototype.
+     * @param {string} functionName - Name of the method to be patched
+     * @param {module:Patcher~patchCallback} callback - Function to run after the original method
+     * @param {object} options - Object used to pass additional options.
+     * @param {string} [options.type=after] - Determines whether to run the function `before`, `instead`, or `after` the original.
+     * @param {string} [options.displayName] You can provide meaningful name for class/object provided in `what` param for logging purposes. By default, this function will try to determine name automatically.
+     * @param {boolean} [options.forcePatch=true] Set to `true` to patch even if the function doesnt exist. (Adds noop function in place).
+     * @return {module:Patcher~unpatch} Function with no arguments and no return value that should be called to cancel (unpatch) this patch. You should save and run it when your plugin is stopped.
+     */
+    static pushChildPatch<M extends object, K extends Extract<keyof M, string>>(
+        caller: string,
+        moduleToPatch: M,
+        functionName: K,
+        callback: M[K] extends (...a: any[]) => any ? PatchCallback<M[K]> : never,
+        options: PatchOptions = {}
+    ) {
+        const {type = "after", forcePatch = true} = options;
+        const module = this.resolveModule<M>(moduleToPatch);
+        if (!module) return null;
+        if (!module[functionName] && forcePatch) module[functionName] = (function () {}) as M[K];
+        if (!(module[functionName] instanceof Function)) return null;
 
-		if (typeof moduleToPatch === "string") options.displayName = moduleToPatch;
-		const displayName = options.displayName || (module as any).displayName || (module as any).name || (module.constructor as any).displayName || module.constructor.name;
+        if (typeof moduleToPatch === "string") options.displayName = moduleToPatch;
+        const displayName = options.displayName || (module as any).displayName || (module as any).name || (module.constructor as any)?.displayName || module.constructor?.name || "anonymous";
+
+        
 
 		const patchId = `${displayName}.${functionName}`;
 		const patch: Patch<M, K> = (this.patches.find(p => p.module == module && p.functionName == functionName) || this.makePatch(module, functionName, patchId)) as Patch<M, K>;

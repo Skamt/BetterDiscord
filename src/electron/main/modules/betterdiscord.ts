@@ -118,6 +118,8 @@ export default class BetterDiscord {
 	}
 
     static async injectRenderer(browserWindow: BrowserWindow) {
+        if (hasCrashed) return;
+
         const location = path.join(__dirname, "betterdiscord.js");
         if (!fs.existsSync(location)) return; // TODO: cut a fatal log
         const content = fs.readFileSync(location).toString();
@@ -138,7 +140,7 @@ export default class BetterDiscord {
     }
 
     static setup(browserWindow: BrowserWindow) {
-    	ipc.on("RENDERER_READY", () => BetterDiscord.injectRenderer(browserWindow));
+    	// ipc.on("RENDERER_READY", () => BetterDiscord.injectRenderer(browserWindow));
 
         // Setup some useful vars to avoid blocking IPC calls
         try {
@@ -157,9 +159,11 @@ export default class BetterDiscord {
 
         // When DOM is available, pass the renderer over the wall
         browserWindow.webContents.on("dom-ready", () => {
-        	BetterDiscord.prepRenderer(browserWindow);
+
+        	// BetterDiscord.prepRenderer(browserWindow);
             // // Temporary fix for new canary/ptb changes
             // if (!hasCrashed) return setTimeout(() => this.injectRenderer(browserWindow), 1000);
+
 
             // // If a previous crash was detected, show a message explaining why BD isn't there
             // electron.dialog.showMessageBox({

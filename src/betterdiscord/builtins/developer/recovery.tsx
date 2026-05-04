@@ -183,7 +183,9 @@ export default new class Recovery extends Builtin {
 
     getPluginInfo(pluginName) {
         try {
-            const plugin = pluginmanager.getPlugin(pluginName);
+            const plugin = pluginmanager.resolveAddon(pluginName);
+            if (!plugin) return null;
+
             return {
                 name: plugin.name || pluginName,
                 githubUrl: plugin.source || plugin.github,

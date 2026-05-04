@@ -23,9 +23,16 @@ const moduleConfigs: Record<string, EntryPoint> = {
     setup: {"in": "src/betterdiscord/setup.js", "out": "setup"},
     main: {"in": "src/electron/main/index.ts", "out": "main"},
     preload: {"in": "src/electron/preload/index.ts", "out": "preload"},
+
     // editorPreload: {"in": "src/editor/preload.ts", "out": "editor/preload"},
     // editor: {"in": "src/editor/script.ts", "out": "editor/script"},
     // editorHtml: {"in": "src/editor/index.html", "out": "editor/index"}
+
+    earlyRenderer: {"in": "src/electron/preload/early/index.ts", "out": "earlyRenderer"},
+    // editorPreload: {"in": "src/editor/preload.ts", "out": "editor/preload"},
+    // editor: {"in": "src/editor/script.ts", "out": "editor/script"},
+    // editorHtml: {"in": "src/editor/index.html", "out": "editor/index"}
+
 };
 
 let modulesRequested = process.argv.filter(a => a.startsWith("--module=")).map(a => a.replace("--module=", ""));

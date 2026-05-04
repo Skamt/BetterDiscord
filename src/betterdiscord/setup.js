@@ -9,5 +9,7 @@ const { ipcRenderer  } = require("electron");
 		react = getByKeys(["createElement", "cloneElement"]);
 		await new Promise(s => setTimeout(s, 250));
 	}
-	ipcRenderer.send("RENDERER_READY");
+	setTimeout(()=>ipcRenderer.send("RENDERER_READY"), 15*1000);
+	// requestIdleCallback(()=>ipcRenderer.send("RENDERER_READY"), {timeout:15*1000});
+
 })();
