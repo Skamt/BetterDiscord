@@ -94,7 +94,7 @@ export default new class Core {
         ThemeManager.loadAddons();
 
         Logger.log("Startup", "Initializing Updater");
-        Updater.initialize();
+        // Updater.initialize();
 
         Logger.log("Startup", "Removing Loading Icon");
         LoadingIcon.hide();
