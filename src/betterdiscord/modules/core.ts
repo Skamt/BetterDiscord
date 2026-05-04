@@ -93,7 +93,7 @@ export default new class Core {
         const pluginErrors = PluginManager.initialize();
         _console.timeEnd("BdLoad");
 
-        PluginManager.initialize();
+        // PluginManager.initialize();
         PluginManager.loadAddons("connection");
 
         Logger.log("Startup", "Loading Themes");
