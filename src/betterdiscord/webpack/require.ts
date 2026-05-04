@@ -69,9 +69,8 @@ function listenToModules(modules: Record<PropertyKey, RawModule>) {
 const {promise, resolve} = Promise.withResolvers<void>();
 export const allModulesLoaded = promise;
 
-let loadingModules = 2;
+let loadingModules = 1;
 let moduleLoadTimeout: ReturnType<typeof setTimeout> | null = null;
-requestIdleCallback(onLoadEnd);
 
 function onLoadStart() {
     loadingModules++;
@@ -129,7 +128,7 @@ window.webpackChunkdiscord_app.push([
 
 getLazy<any>(m => m.Ay?.appFirstRenderAfterReadyPayload).then((m) => {
     const alreadyFired = performance.getEntriesByName("app_first_render_after_ready_payload").length > 0;
-    if(alreadyFired) {
+    if (alreadyFired) {
         onLoadEnd();
         return;
     }
