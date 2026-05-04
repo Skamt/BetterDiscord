@@ -128,6 +128,12 @@ window.webpackChunkdiscord_app.push([
 ]);
 
 getLazy<any>(m => m.Ay?.appFirstRenderAfterReadyPayload).then((m) => {
+    const alreadyFired = performance.getEntriesByName("app_first_render_after_ready_payload").length > 0;
+    if(alreadyFired) {
+        onLoadEnd();
+        return;
+    }
+
     Patcher.after("WebpackRequire", m.Ay, "appFirstRenderAfterReadyPayload", () => {
         onLoadEnd();
     });
