@@ -2,6 +2,7 @@ import type {Webpack} from "discord";
 import Logger from "@common/logger";
 import type {RawModule} from "../types/discord/webpack";
 import Patcher from "@modules/patcher";
+import {getLazy} from "./lazy";
 
 export let webpackRequire: Webpack.Require;
 
@@ -68,7 +69,7 @@ function listenToModules(modules: Record<PropertyKey, RawModule>) {
 const {promise, resolve} = Promise.withResolvers<void>();
 export const allModulesLoaded = promise;
 
-let loadingModules = 1;
+let loadingModules = 2;
 let moduleLoadTimeout: ReturnType<typeof setTimeout> | null = null;
 requestIdleCallback(onLoadEnd);
 
@@ -125,6 +126,12 @@ window.webpackChunkdiscord_app.push([
         }
     }
 ]);
+
+getLazy<any>(m => m.Ay?.appFirstRenderAfterReadyPayload).then((m) => {
+    Patcher.after("WebpackRequire", m.Ay, "appFirstRenderAfterReadyPayload", () => {
+        onLoadEnd();
+    });
+});
 
 export const modules = new Proxy({} as Webpack.Require["m"], {
     ownKeys() {return Object.keys(webpackRequire.m);},
