@@ -16,7 +16,7 @@ export function getLazy<T>(filter: Webpack.ModuleFilter, options: Webpack.LazyOp
         return Promise.resolve(undefined);
     }
 
-    const cached = getModule<T>(filter, options);
+    const cached = getModule<T>(filter, Object.assign({}, options, {fatal: false}));
     if (cached) return Promise.resolve(cached);
 
     filter = wrapModuleFilter(filter);
