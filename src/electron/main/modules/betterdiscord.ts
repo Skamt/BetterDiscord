@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import electron, {ipcMain as ipc,BrowserWindow} from "electron";
+import electron, {BrowserWindow} from "electron";
 import {spawn} from "child_process";
 
 import ReactDevTools from "./reactdevtools";
@@ -98,25 +98,6 @@ export default class BetterDiscord {
         if (!fs.existsSync(path.join(bdFolder, "themes"))) fs.mkdirSync(path.join(bdFolder, "themes"));
     }
 
-    static async prepRenderer(browserWindow){
-		const location = path.join(__dirname, "setup.js");
-		if (!fs.existsSync(location)) return; // TODO: cut a fatal log
-		const content = fs.readFileSync(location).toString();
-		const success = await browserWindow.webContents.executeJavaScript(`
-            (() => {
-                try {
-                    ${content}
-                    return true;
-                } catch(error) {
-                    console.error("[SETUP]", error);
-                    return false;
-                }
-            })();
-        `);
-
-		if (!success) return; // TODO: cut a fatal log
-	}
-
     static async injectRenderer(browserWindow: BrowserWindow) {
         if (hasCrashed) return;
 
@@ -140,7 +121,6 @@ export default class BetterDiscord {
     }
 
     static setup(browserWindow: BrowserWindow) {
-    	// ipc.on("RENDERER_READY", () => BetterDiscord.injectRenderer(browserWindow));
 
         // Setup some useful vars to avoid blocking IPC calls
         try {
@@ -159,30 +139,27 @@ export default class BetterDiscord {
 
         // When DOM is available, pass the renderer over the wall
         browserWindow.webContents.on("dom-ready", () => {
+            // Temporary fix for new canary/ptb changes
+            if (!hasCrashed) return;
 
-        	// BetterDiscord.prepRenderer(browserWindow);
-            // // Temporary fix for new canary/ptb changes
-            // if (!hasCrashed) return setTimeout(() => this.injectRenderer(browserWindow), 1000);
-
-
-            // // If a previous crash was detected, show a message explaining why BD isn't there
-            // electron.dialog.showMessageBox({
-            //     title: "Discord Crashed",
-            //     type: "warning",
-            //     message: "Something crashed your Discord Client",
-            //     detail: "BetterDiscord has automatically disabled itself just in case. To enable it again, restart Discord or click the button below.\n\nThis may have been caused by a plugin. Try moving all of your plugins outside the plugin folder and see if Discord still crashed.",
-            //     buttons: ["Try Again", "Open Plugins Folder", "Cancel"],
-            // }).then((result) => {
-            //     if (result.response === 0) {
-            //         electron.app.relaunch();
-            //         electron.app.exit();
-            //     }
-            //     if (result.response === 1) {
-            //         if (process.platform === "win32") spawn("explorer.exe", [path.join(bdFolder, "plugins")]);
-            //         else electron.shell.openPath(path.join(bdFolder, "plugins"));
-            //     }
-            // });
-            // hasCrashed = false;
+            // If a previous crash was detected, show a message explaining why BD isn't there
+            electron.dialog.showMessageBox({
+                title: "Discord Crashed",
+                type: "warning",
+                message: "Something crashed your Discord Client",
+                detail: "BetterDiscord has automatically disabled itself just in case. To enable it again, restart Discord or click the button below.\n\nThis may have been caused by a plugin. Try moving all of your plugins outside the plugin folder and see if Discord still crashed.",
+                buttons: ["Try Again", "Open Plugins Folder", "Cancel"],
+            }).then((result) => {
+                if (result.response === 0) {
+                    electron.app.relaunch();
+                    electron.app.exit();
+                }
+                if (result.response === 1) {
+                    if (process.platform === "win32") spawn("explorer.exe", [path.join(bdFolder, "plugins")]);
+                    else electron.shell.openPath(path.join(bdFolder, "plugins"));
+                }
+            });
+            hasCrashed = false;
         });
 
         // This is used to alert renderer code to onSwitch events
@@ -191,26 +168,7 @@ export default class BetterDiscord {
         });
 
         browserWindow.webContents.on("render-process-gone", () => {
-           electron.dialog
-				.showMessageBox({
-					title: "Discord Crashed",
-					type: "warning",
-					message: "Something crashed your Discord Client",
-					detail:
-						"BetterDiscord has automatically disabled itself just in case. To enable it again, restart Discord or click the button below.\n\nThis may have been caused by a plugin. Try moving all of your plugins outside the plugin folder and see if Discord still crashed.",
-					buttons: ["Try Again", "Open Plugins Folder", "Cancel"],
-				})
-				.then((result) => {
-					if (result.response === 0) {
-						electron.app.relaunch();
-						electron.app.exit();
-					}
-					if (result.response === 1) {
-						if (process.platform === "win32")
-							spawn("explorer.exe", [path.join(bdFolder, "plugins")]);
-						else electron.shell.openPath(path.join(bdFolder, "plugins"));
-					}
-				});
+            hasCrashed = true;
         });
 
         // Seems to be windows exclusive. MacOS requires a build plist change

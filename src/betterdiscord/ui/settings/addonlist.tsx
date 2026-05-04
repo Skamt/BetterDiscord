@@ -65,7 +65,7 @@ function makeControlButton(title: string, children: ReactNode, action: () => voi
     </DiscordModules.Tooltip>;
 }
 
-export function confirmDelete(addon: Addon) {
+function confirmDelete(addon: Addon) {
     return new Promise(resolve => {
         Modals.showConfirmationModal(t("Modals.confirmAction"), t("Addons.confirmDelete", {name: addon.name}), {
             danger: true,
@@ -81,7 +81,7 @@ export function confirmDelete(addon: Addon) {
  * @param {string} type
  * @returns
  */
-export function confirmEnable(action: () => void, type: string) {
+function confirmEnable(action: () => void, type: string) {
     /**
      * @param {MouseEvent} event
      */

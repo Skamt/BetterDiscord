@@ -1,9 +1,7 @@
-import type { Webpack } from "discord";
+import type {Webpack} from "discord";
 import Logger from "@common/logger";
-
 import type {RawModule} from "../types/discord/webpack";
 import Patcher from "@modules/patcher";
-
 
 export let webpackRequire: Webpack.Require;
 
@@ -12,21 +10,20 @@ export const lazyListeners = new Set<Webpack.ModuleFilter>();
 let __ORIGINAL_PUSH__ = (window.webpackChunkdiscord_app ??= []).push;
 
 Object.defineProperty(window.webpackChunkdiscord_app, "push", {
-	configurable: true,
-	get: () => handlePush,
-	set: newPush => {
-		__ORIGINAL_PUSH__ = newPush;
+    configurable: true,
+    get: () => handlePush,
+    set: (newPush) => {
+        __ORIGINAL_PUSH__ = newPush;
 
-		Object.defineProperty(window.webpackChunkdiscord_app, "push", {
-			value: handlePush,
-			configurable: true,
-			writable: true
-		});
-	}
+        Object.defineProperty(window.webpackChunkdiscord_app, "push", {
+            value: handlePush,
+            configurable: true,
+            writable: true
+        });
+    }
 });
 
 function listenToModules(modules: Record<PropertyKey, RawModule>) {
-
     for (const moduleId in modules) {
         if (!Reflect.has(modules, moduleId)) continue;
         if (Reflect.has(webpackRequire.c, moduleId)) continue;
@@ -110,9 +107,9 @@ function patchModuleLoading(require: Webpack.Require) {
 }
 
 function handlePush(chunk: Webpack.ModuleWithoutEffect | Webpack.ModuleWithEffect) {
-	const [, modules] = chunk;
-	listenToModules(modules);
-	return Reflect.apply(__ORIGINAL_PUSH__, window.webpackChunkdiscord_app, [chunk]);
+    const [, modules] = chunk;
+    listenToModules(modules);
+    return Reflect.apply(__ORIGINAL_PUSH__, window.webpackChunkdiscord_app, [chunk]);
 }
 
 window.webpackChunkdiscord_app.push([
@@ -128,19 +125,17 @@ window.webpackChunkdiscord_app.push([
 ]);
 
 export const modules = new Proxy({} as Webpack.Require["m"], {
-	ownKeys() {
-		return Object.keys(webpackRequire.m);
-	},
-	getOwnPropertyDescriptor() {
-		return {
-			enumerable: true,
-			configurable: true // Not actually
-		};
-	},
-	get(_, k) {
-		return webpackRequire.m[k];
-	},
-	set() {
-		throw new Error("[WebpackModules~modules] Setting modules is not allowed.");
-	}
+    ownKeys() {return Object.keys(webpackRequire.m);},
+    getOwnPropertyDescriptor() {
+        return {
+            enumerable: true,
+            configurable: true, // Not actually
+        };
+    },
+    get(_, k) {
+        return webpackRequire.m[k];
+    },
+    set() {
+        throw new Error("[WebpackModules~modules] Setting modules is not allowed.");
+    }
 });

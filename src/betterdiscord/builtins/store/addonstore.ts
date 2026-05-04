@@ -91,7 +91,6 @@ export default new class AddonStoreBuiltin extends Builtin {
     }
 
     async initialize() {
-    	return;
         RemoteAPI.addProtocolListener((url) => {
             if (!Settings.get(this.collection, this.category, this.id)) return;
 

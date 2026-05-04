@@ -270,7 +270,6 @@ class Addon {
      * @returns {Promise<void>}
      */
     async download(shouldSkipConfirm = false) {
-    	return;
         if (this.isInstalled()) {
             Toasts.show(t("Addons.alreadyInstalled", {name: this.name}), {
                 type: "info"
@@ -396,7 +395,6 @@ class Addon {
 
 const addonStore = new class AddonStore {
     initialize() {
-    	return;
         this._cache = (JsonStore.get("addon-store") as {addons: Record<string, BdWebAddon>; known: string[]; version: string;}) || {addons: {}, known: [], version: ""};
 
         if (this._cache.version !== Web.API_VERSION) {
@@ -448,7 +446,6 @@ const addonStore = new class AddonStore {
      * @returns {Promise<Addon>}
      */
     requestAddon(idOrName: string) {
-    	return;
         const cache = this.getAddon(idOrName);
         if (typeof cache === "object") return Promise.resolve(cache);
 
@@ -569,7 +566,6 @@ const addonStore = new class AddonStore {
      * @param {? boolean} firstRun
      */
     async requestAddons(firstRun = false) {
-    	return;
         Logger.debug("AddonStore", "Requesting all addons");
 
         if (!(firstRun && Object.keys(this._cache.addons).length)) {

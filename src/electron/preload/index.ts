@@ -7,24 +7,13 @@ import * as IPCEvents from "@common/constants/ipcevents";
 
 DiscordNativePatch.init();
 
-let hasInitialized = 0;
+let hasInitialized = false;
 contextBridge.exposeInMainWorld("process", newProcess);
 contextBridge.exposeInMainWorld("BetterDiscordPreload", () => {
-    if (hasInitialized >= 2) return null;
-    hasInitialized++;
+    if (hasInitialized) return null;
+    hasInitialized = true;
     return BdApi;
 });
-
-
-const M = require("module");
-const orig = M.prototype.require;
-M.prototype.require = function (id) {
-	if (id.includes("/common/crashReporterSetup")) {
-		console.log(id);
-		return null;
-	}
-	return orig.apply(this, [id]);
-};
 
 let hasRanRenderer = false;
 contextBridge.exposeInMainWorld("BetterDiscordRunRenderer", () => {
@@ -33,6 +22,5 @@ contextBridge.exposeInMainWorld("BetterDiscordRunRenderer", () => {
 
     ipcRenderer.invoke(IPCEvents.RUN_RENDERER);
 });
-
 
 init();

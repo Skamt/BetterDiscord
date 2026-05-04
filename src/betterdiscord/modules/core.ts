@@ -86,14 +86,7 @@ export default new class Core {
         }
 
         Logger.log("Startup", "Loading Plugins");
-
-        // const pluginErrors = [];
-        const _console = console.context();
-        _console.time("BdLoad");
-        const pluginErrors = PluginManager.initialize();
-        _console.timeEnd("BdLoad");
-
-        // PluginManager.initialize();
+        PluginManager.initialize();
         PluginManager.loadAddons("connection");
 
         Logger.log("Startup", "Loading Themes");
