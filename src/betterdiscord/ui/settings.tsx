@@ -360,15 +360,15 @@ const SettingsRenderer = new class SettingsRenderer {
 
     async patchVersionInformation() {
         const versionDisplayModule = await getMangledLazy<{
-            virsionDisplay: React.FC;
+            versionDisplay: React.FC;
         }>(["copyValue", "RELEASE_CHANNEL"], {
-            virsionDisplay: Filters.byStrings("copyValue", "RELEASE_CHANNEL")
+            versionDisplay: Filters.byStrings("copyValue", "RELEASE_CHANNEL")
         }, {
             searchDefault: false,
             mapDeclarations: true
         });
 
-        Patcher.instead("SettingsManager", versionDisplayModule, "virsionDisplay", () => <VersionInfo />);
+        Patcher.instead("SettingsManager", versionDisplayModule, "versionDisplay", () => <VersionInfo />);
     }
 
     public openSettingsPage(key: string) {
