@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 import {describe, test, expect} from "bun:test";
 import parseDeclarations from "../../src/electron/preload/early/parseDeclarations";
 

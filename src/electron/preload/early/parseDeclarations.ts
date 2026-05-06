@@ -1,3 +1,4 @@
+/* eslint-disable no-labels */
 const enum CharCodes {
     OpenBrace = 123,
     CloseBrace = 125,
@@ -34,7 +35,7 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
     let depth = 0;
     let inDeclaration = false;
     let isDestructuring = false;
-    let declarations: string[] = [];
+    const declarations: string[] = [];
 
     for (let i = 0; i < moduleString.length; i++) {
         const code = moduleString.charCodeAt(i);
@@ -56,27 +57,30 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
             case CharCodes.Backtick:
                 i = findEndOfTemplateLiteral(moduleString, i + 1);
                 break;
-            case CharCodes.Slash:
+            case CharCodes.Slash: {
                 // Ignore regex
-                const lastCode = moduleString.charCodeAt(i - 1);
+                const prevCode = moduleString.charCodeAt(i - 1);
                 if (
-                    (!isVariableCharacter(lastCode) || moduleString.startsWith("return", i - 6)) &&
-                    lastCode !== CharCodes.CloseParenthesis &&
-                    lastCode !== CharCodes.CloseBracket
+                    (!isVariableCharacter(prevCode) || moduleString.startsWith("return", i - 6)) &&
+                    prevCode !== CharCodes.CloseParenthesis &&
+                    prevCode !== CharCodes.CloseBracket
                 ) {
                     i = findEndOfRegex(moduleString, i + 1);
                 }
                 break;
-            default:
+            }
+            default: {
                 if (isDestructuring) {
                     // Check if we are no longer destructuring
                     if (depth <= baseDepth) {
                         isDestructuring = false;
                         if (depth !== baseDepth) break;
-                    } else if (depth !== baseDepth + 1) {
+                    }
+                    else if (depth !== baseDepth + 1) {
                         break;
                     }
-                } else if (depth !== baseDepth) {
+                }
+                else if (depth !== baseDepth) {
                     break;
                 }
 
@@ -141,6 +145,7 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
                     declarations.push(declaration);
                     i += declaration.length;
                 }
+            }
         }
     }
 
@@ -158,7 +163,8 @@ function getVariableName(moduleString: string, startIndex: number): [string, boo
         // If we're at a colon the variable is being renamed in an object destructure
         if (code === CharCodes.Colon) {
             startIndex = i + 1;
-        } else if (!isVariableCharacter(code)) {
+        }
+        else if (!isVariableCharacter(code)) {
             return [moduleString.slice(startIndex, i), isDestructuring];
         }
     }
@@ -194,10 +200,12 @@ function findEndOfRegex(moduleString: string, startIndex: number) {
             if (code === CharCodes.CloseBracket && !shouldEscape) {
                 inCharacterSet = false;
             }
-        } else {
+        }
+        else {
             if (code === CharCodes.Slash && !shouldEscape) {
                 return i;
-            } else if (code === CharCodes.OpenBracket && !shouldEscape) {
+            }
+            else if (code === CharCodes.OpenBracket && !shouldEscape) {
                 inCharacterSet = true;
             }
         }
@@ -228,7 +236,8 @@ function findEndOfTemplateLiteral(moduleString: string, startIndex: number) {
             if (code === CharCodes.OpenBrace && lastCode === CharCodes.Dollar && lastLastCode !== CharCodes.Backslash) {
                 depth++;
             }
-        } else {
+        }
+        else {
             switch (code) {
                 case CharCodes.OpenBrace:
                     depth++;
@@ -243,16 +252,17 @@ function findEndOfTemplateLiteral(moduleString: string, startIndex: number) {
                 case CharCodes.Backtick:
                     i = findEndOfTemplateLiteral(moduleString, i + 1);
                     break;
-                case CharCodes.Slash:
-                    const lastCode = moduleString.charCodeAt(i - 1);
+                case CharCodes.Slash: {
+                    const prevCode = moduleString.charCodeAt(i - 1);
                     if (
-                    (!isVariableCharacter(lastCode) || moduleString.startsWith("return", i - 6)) &&
-                        lastCode !== CharCodes.CloseParenthesis &&
-                        lastCode !== CharCodes.CloseBracket
+                    (!isVariableCharacter(prevCode) || moduleString.startsWith("return", i - 6))
+                        && prevCode !== CharCodes.CloseParenthesis
+                        && prevCode !== CharCodes.CloseBracket
                     ) {
                         i = findEndOfRegex(moduleString, i + 1);
                     }
                     break;
+                }
             }
         }
 
