@@ -1,6 +1,6 @@
 import Logger from "@common/logger";
 import type {RawModule} from "../../../betterdiscord/types/discord/webpack";
-import parseDeclarations from "./parseDeclarations";
+import parseDeclarations from "@common/parseDeclarations";
 
 const getPrefix = /^(.*?)\(/;
 // Functions like ones from objects ({ a() {} }) will throw so we replace 'a' with 'function'
