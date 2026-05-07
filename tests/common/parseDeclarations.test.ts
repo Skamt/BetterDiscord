@@ -1,6 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 import {describe, test, expect} from "bun:test";
 import parseDeclarations from "@common/parseDeclarations";
+import moduleCode from "./moduleCode.txt";
 
 describe("parseDeclarations", () => {
     test("function wrapper", () => {
@@ -66,5 +67,21 @@ describe("parseDeclarations", () => {
     test("regex after return", () => {
         const tested = `function a(){return/}/}function b(){}`;
         expect(parseDeclarations(tested, 0)).toEqual(["a", "b"]);
+    });
+
+    test("actual module code", async () => {
+        const cases = moduleCode.replaceAll("\r\n", "\n").split("\n=-=-=-=\n");
+
+        expect(parseDeclarations(cases[0])).toEqual([
+            "i", "r", "s", "a", "o", "l", "u", "c", "d", "_", "f", "h",
+            "p", "E", "m", "g", "A", "I", "T", "S", "N", "y", "C"
+        ]);
+
+        expect(parseDeclarations(cases[1])).toEqual([]);
+
+        expect(parseDeclarations(cases[2])).toEqual([
+            "i", "a", "r", "d", "l", "n", "u", "c", "o", "S", "g", "f",
+            "v", "E", "h", "p", "R", "_", "G", "k"
+        ]);
     });
 });
