@@ -255,7 +255,7 @@ function findEndOfTemplateLiteral(moduleString: string, startIndex: number) {
                 case CharCodes.Slash: {
                     const prevCode = moduleString.charCodeAt(i - 1);
                     if (
-                    (!isVariableCharacter(prevCode) || moduleString.startsWith("return", i - 6))
+                        (!isVariableCharacter(prevCode) || moduleString.startsWith("return", i - 6))
                         && prevCode !== CharCodes.CloseParenthesis
                         && prevCode !== CharCodes.CloseBracket
                     ) {
