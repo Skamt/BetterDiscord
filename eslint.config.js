@@ -85,6 +85,11 @@ export default ts.config(
             "no-whitespace-before-property": "error",
             "object-curly-spacing": ["error", "never", {objectsInObjects: false}],
             "object-property-newline": ["error", {allowAllPropertiesOnSameLine: true}],
+            "operator-linebreak": [
+                "error",
+                "none",
+                {overrides: {"?": "before", ":": "before", "&&": "before", "||": "before"}}
+            ],
             "prefer-const": "error",
             "quote-props": ["error", "consistent-as-needed", {keywords: true}],
             "quotes": ["error", "double", {allowTemplateLiterals: true}],

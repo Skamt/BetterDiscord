@@ -61,9 +61,9 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
                 // Ignore regex
                 const prevCode = moduleString.charCodeAt(i - 1);
                 if (
-                    (!isVariableCharacter(prevCode) || moduleString.startsWith("return", i - 6)) &&
-                    prevCode !== CharCodes.CloseParenthesis &&
-                    prevCode !== CharCodes.CloseBracket
+                    (!isVariableCharacter(prevCode) || moduleString.startsWith("return", i - 6))
+                    && prevCode !== CharCodes.CloseParenthesis
+                    && prevCode !== CharCodes.CloseBracket
                 ) {
                     i = findEndOfRegex(moduleString, i + 1);
                 }
@@ -275,10 +275,10 @@ function findEndOfTemplateLiteral(moduleString: string, startIndex: number) {
 
 function isVariableCharacter(code: number) {
     return (
-        (code >= CharCodes.LowerA && code <= CharCodes.LowerZ) ||
-        (code >= CharCodes.CapitalA && code <= CharCodes.CapitalZ) ||
-        (code >= CharCodes.Zero && code <= CharCodes.Nine) ||
-        code === CharCodes.Underscore ||
-        code === CharCodes.Dollar
+        (code >= CharCodes.LowerA && code <= CharCodes.LowerZ)
+        || (code >= CharCodes.CapitalA && code <= CharCodes.CapitalZ)
+        || (code >= CharCodes.Zero && code <= CharCodes.Nine)
+        || code === CharCodes.Underscore
+        || code === CharCodes.Dollar
     );
 }
