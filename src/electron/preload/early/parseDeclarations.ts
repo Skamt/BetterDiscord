@@ -17,8 +17,8 @@ const enum CharCodes {
     Comma = 44,
     Zero = 48,
     Nine = 57,
-    CaptialA = 65,
-    CaptialZ = 90,
+    CapitalA = 65,
+    CapitalZ = 90,
     LowerA = 97,
     LowerZ = 122,
     Underscore = 95,
@@ -276,7 +276,7 @@ function findEndOfTemplateLiteral(moduleString: string, startIndex: number) {
 function isVariableCharacter(code: number) {
     return (
         (code >= CharCodes.LowerA && code <= CharCodes.LowerZ) ||
-        (code >= CharCodes.CaptialA && code <= CharCodes.CaptialZ) ||
+        (code >= CharCodes.CapitalA && code <= CharCodes.CapitalZ) ||
         (code >= CharCodes.Zero && code <= CharCodes.Nine) ||
         code === CharCodes.Underscore ||
         code === CharCodes.Dollar
