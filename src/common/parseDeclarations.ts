@@ -34,7 +34,7 @@ const multiDeclarations = ["let", "var", "const"];
 export default function parseDeclarations(moduleString: string, baseDepth = 1) {
     let depth = 0;
     let inDeclaration = false;
-    let isDestructuring = false;
+    let destructuringDepth = 0;
     const declarations: string[] = [];
 
     for (let i = 0; i < moduleString.length; i++) {
@@ -49,6 +49,11 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
             case CharCodes.CloseParenthesis:
             case CharCodes.CloseBracket:
                 depth--;
+
+                // Check if we just closed a destructure
+                if (depth >= baseDepth && depth < baseDepth + destructuringDepth) {
+                    destructuringDepth = depth - baseDepth;
+                }
                 break;
             case CharCodes.DoubleQuote:
             case CharCodes.SingleQuote:
@@ -70,19 +75,7 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
                 break;
             }
             default: {
-                if (isDestructuring) {
-                    // Check if we are no longer destructuring
-                    if (depth <= baseDepth) {
-                        isDestructuring = false;
-                        if (depth !== baseDepth) break;
-                    }
-                    else if (depth !== baseDepth + 1) {
-                        break;
-                    }
-                }
-                else if (depth !== baseDepth) {
-                    break;
-                }
+                if (depth < baseDepth || depth > baseDepth + destructuringDepth) break;
 
                 // If we find a declaration keyword begin the declaration state
                 if (!inDeclaration) {
@@ -108,17 +101,14 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
                         if (nextChar === CharCodes.Space) i++;
                         else if (nextChar !== CharCodes.OpenBrace && nextChar !== CharCodes.OpenBracket) continue;
 
-                        const [declaration, nowDestructuring] = getVariableName(moduleString, i + keyword.length);
+                        const [declaration, destructuredAmount, offset] = getVariableName(moduleString, i + keyword.length);
 
-                        // If we're destructuring, increase depth
-                        if (nowDestructuring) {
-                            isDestructuring = true;
-                            depth++;
-                        }
+                        depth += destructuredAmount;
+                        destructuringDepth += destructuredAmount;
 
                         // Add the declaration
                         declarations.push(declaration);
-                        i += keyword.length + declaration.length - 1;
+                        i += keyword.length + offset - 1;
                         inDeclaration = true;
 
                         break checkChar;
@@ -135,15 +125,13 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
 
                 // If we're at a comma, add the next variable
                 if (code === CharCodes.Comma) {
-                    const [declaration, nowDestructuring] = getVariableName(moduleString, i + 1);
+                    const [declaration, destructureAmount, offset] = getVariableName(moduleString, i + 1);
 
-                    if (nowDestructuring) {
-                        isDestructuring = true;
-                        depth++;
-                    }
+                    depth += destructureAmount;
+                    destructuringDepth += destructureAmount;
 
                     declarations.push(declaration);
-                    i += declaration.length;
+                    i += offset;
                 }
             }
         }
@@ -152,24 +140,34 @@ export default function parseDeclarations(moduleString: string, baseDepth = 1) {
     return declarations;
 }
 
-function getVariableName(moduleString: string, startIndex: number): [string, boolean] {
-    const firstCode = moduleString.charCodeAt(startIndex);
-    const isDestructuring = firstCode === CharCodes.OpenBrace || firstCode === CharCodes.OpenBracket;
-    if (isDestructuring) startIndex++;
+function getVariableName(moduleString: string, startIndex: number): [string, number, number] {
+    const initialStart = startIndex;
+    let destructuredAmount = 0;
+    let isFirstCharacter = true;
 
-    for (let i = startIndex + 1; i < moduleString.length; i++) {
+    for (let i = startIndex; i < moduleString.length; i++) {
         const code = moduleString.charCodeAt(i);
 
-        // If we're at a colon the variable is being renamed in an object destructure
-        if (code === CharCodes.Colon) {
+        // Check if we're actually destructuring
+        if (isFirstCharacter && (code === CharCodes.OpenBrace || code === CharCodes.OpenBracket)) {
+            destructuredAmount++;
             startIndex = i + 1;
         }
-        else if (!isVariableCharacter(code)) {
-            return [moduleString.slice(startIndex, i), isDestructuring];
+        else {
+            isFirstCharacter = false;
+
+            // If we're at a colon the variable is being renamed in an object destructure
+            if (code === CharCodes.Colon) {
+                startIndex = i + 1;
+                isFirstCharacter = true;
+            }
+            else if (!isVariableCharacter(code)) {
+                return [moduleString.slice(startIndex, i), destructuredAmount, i - initialStart];
+            }
         }
     }
 
-    return [moduleString.slice(startIndex), isDestructuring];
+    return [moduleString.slice(startIndex), 0, moduleString.length - initialStart];
 }
 
 function findEndOfString(moduleString: string, startIndex: number, quoteChar: CharCodes) {
@@ -221,21 +219,24 @@ function findEndOfRegex(moduleString: string, startIndex: number) {
 function findEndOfTemplateLiteral(moduleString: string, startIndex: number) {
     let depth = 0;
     let lastCode = 0;
-    let lastLastCode = 0;
+    let shouldEscape = false;
 
     for (let i = startIndex; i < moduleString.length; i++) {
         const code = moduleString.charCodeAt(i);
 
         if (depth === 0) {
             // If we found the end, stop
-            if (code === CharCodes.Backtick && lastCode !== CharCodes.Backslash) {
+            if (code === CharCodes.Backtick && !shouldEscape) {
                 return i;
             }
 
             // If we're at a ${, increase the depth and try to find the end
-            if (code === CharCodes.OpenBrace && lastCode === CharCodes.Dollar && lastLastCode !== CharCodes.Backslash) {
+            if (code === CharCodes.OpenBrace && lastCode === CharCodes.Dollar && !shouldEscape) {
                 depth++;
             }
+
+            if (code === CharCodes.Backslash) shouldEscape = !shouldEscape;
+            else if (code !== CharCodes.Dollar) shouldEscape = false;
         }
         else {
             switch (code) {
@@ -266,7 +267,6 @@ function findEndOfTemplateLiteral(moduleString: string, startIndex: number) {
             }
         }
 
-        lastLastCode = lastCode;
         lastCode = code;
     }
 

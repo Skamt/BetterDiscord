@@ -33,6 +33,11 @@ describe("parseDeclarations", () => {
         expect(parseDeclarations(tested, 0)).toEqual(["a", "b", "c", "d", "e", "f", "g"]);
     });
 
+    test("complex destructuring", () => {
+        const tested = `let{z:{a,b},x:[c,{d,q:e}],f=15}={}`;
+        expect(parseDeclarations(tested, 0)).toEqual(["a", "b", "c", "d", "e", "f"]);
+    });
+
     test("regex", () => {
         const tested = `10/5;(10)/5;[10][0]/5;let a=/\\/[^/\\\\]$/,b=/\\(\\)/;`;
         expect(parseDeclarations(tested, 0)).toEqual(["a", "b"]);
@@ -44,7 +49,7 @@ describe("parseDeclarations", () => {
     });
 
     test("nested template literals", () => {
-        const tested = "let a=`${`, ${``}`})`,b=15";
+        const tested = "let a=`\\\\${`, ${``}`})`,b=15";
         expect(parseDeclarations(tested, 0)).toEqual(["a", "b"]);
     });
 
