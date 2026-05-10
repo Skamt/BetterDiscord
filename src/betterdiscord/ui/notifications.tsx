@@ -1,4 +1,4 @@
-import React, {ReactDOM} from "@modules/react";
+import {ReactDOM} from "@modules/react";
 import Button, {type ButtonProps, Colors, Looks} from "@ui/base/button";
 import Settings from "@stores/settings";
 import Notifications from "@stores/notifications";
@@ -6,7 +6,7 @@ import Text from "@ui/base/text";
 import {CircleAlertIcon, CircleCheckIcon, InfoIcon, TriangleAlertIcon} from "lucide-react";
 import DOMManager from "@modules/dommanager";
 import DiscordModules from "@modules/discordmodules";
-import {Children, type MouseEvent, type ReactNode} from "react";
+import React, {Children, type MouseEvent, type ReactNode} from "react";
 import {useStateFromStores} from "@ui/hooks";
 import SimpleMarkdownExt from "@structs/markdown";
 import ErrorBoundary from "@ui/errorboundary";
@@ -197,7 +197,7 @@ const NotificationItem = ({notification}: {notification: Notification;}) => {
                                     <div className="bd-notification-content-text">
                                         <ErrorBoundary>
                                             {Children.map(content, (child) => (
-                                                typeof content === "string" ? SimpleMarkdownExt.parseToReact(child as string) : child
+                                                typeof child === "string" ? SimpleMarkdownExt.parseToReact(child as string) : child
                                             ))}
                                         </ErrorBoundary>
                                     </div>

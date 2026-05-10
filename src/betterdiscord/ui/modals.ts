@@ -27,7 +27,7 @@ import {Filters, getMangled} from "@webpack";
 import type {ComponentType, ReactElement, ReactNode, RefObject} from "react";
 import AddonError from "@structs/addonerror";
 import AddonErrorsStore from "@stores/addonerrors";
-import SimpleMarkdownExt from "@structs/markdown.js";
+import SimpleMarkdownExt from "@structs/markdown";
 
 
 const queue: Array<() => void> = [];

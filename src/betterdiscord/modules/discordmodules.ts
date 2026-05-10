@@ -66,7 +66,7 @@ SyncModules.Tooltip ??= props => props.children?.({}) ?? null;
 
 const MemoModules = memoize({
     get InviteActions(): InviteActions | undefined {return getByKeys(["createInvite"], {firstId: 846293, cacheId: "core-InviteActions"});},
-    get SimpleMarkdownWrapper(): SimpleMarkdownWrapper | undefined {return getByKeys(["reactParserFor"], {firstId: 46054, cacheId: "core-SimpleMarkdown"});},
+    get SimpleMarkdownWrapper(): SimpleMarkdownWrapper | undefined {return getByKeys(["reactParserFor"], {firstId: 46054, cacheId: "core-SimpleMarkdownWrapper"});},
     get promptToUpload() {return getByStrings(["getUploadCount", ".UPLOAD_FILE_LIMIT_ERROR"], {searchExports: true, firstId: 518960, cacheId: "core-promptToUpload"});},
     get RemoteModule(): RemoteModule | undefined {return getByKeys(["setBadge"], {firstId: 837921, cacheId: "core-RemoteModule"});},
     get UserAgentInfo(): UserAgentInfo | undefined {return getByKeys(["os", "layout"], {firstId: 214958, cacheId: "core-UserAgentInfo"});},
