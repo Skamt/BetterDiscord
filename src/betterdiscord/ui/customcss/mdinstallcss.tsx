@@ -19,7 +19,7 @@ class InstallCSS {
     static activeNotifications = new Map();
 
     static async initialize() {
-        const patch = DiscordModules.SimpleMarkdownWrapper.defaultRules.codeBlock as Required<Rule>;
+        const patch = DiscordModules.SimpleMarkdownWrapper!.defaultRules.codeBlock as Required<Rule>;
         const codeBlockStyles: any = await getLazy(Filters.byKeys(["codeActions"]), {firstId: 992595, cacheId: "core-mdinstallcss-codeBlockStyles"});
         if (!patch.react || typeof patch.react !== "function") return;
 

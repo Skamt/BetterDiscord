@@ -18,7 +18,7 @@ import DiscordModules from "@modules/discordmodules";
 import {useStateFromStores} from "@ui/hooks";
 import AddonErrorsStore from "@stores/addonerrors";
 
-const Parser = DiscordModules.SimpleMarkdownWrapper.defaultRules;
+const Parser = DiscordModules.SimpleMarkdown.defaultRules;
 const {useState, useCallback, useMemo} = React;
 
 
