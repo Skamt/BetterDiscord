@@ -13,13 +13,6 @@ export interface RemoteModule {
     minimize(): void;
 }
 
-export type GetClientInfo = () => {
-    buildNumber: string;
-    logsUploaded: string;
-    releaseChannel: string;
-    versionHash: string;
-};
-
 export interface UserAgentInfo {
     description: string;
     layout: string;
