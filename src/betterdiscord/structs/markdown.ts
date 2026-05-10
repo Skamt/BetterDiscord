@@ -16,7 +16,9 @@ export default class SimpleMarkdownExt {
 
     static _initialize() {
         if (DiscordModules.SimpleMarkdownWrapper) {
-            this._parse = (s) => DiscordModules.SimpleMarkdownWrapper!.parse(s);
+            this._parse = (s, o) => DiscordModules.SimpleMarkdownWrapper!.parse(s, true, {
+                allowLinks: true
+            });
             this._renderer = o => o as ReactElement;
 
             return;

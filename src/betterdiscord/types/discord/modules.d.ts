@@ -186,6 +186,6 @@ export interface SimpleMarkdown {
 
 export interface SimpleMarkdownWrapper {
     defaultRules: Rules;
-    parse: (s: string) => object;
+    parse: (s: string, o?: boolean, i?: object) => object;
     reactParserFor: (r: Rules) => this["parse"];
 }
