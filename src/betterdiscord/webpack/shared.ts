@@ -34,6 +34,15 @@ export const wrapDeclarationFilter = (filter: Webpack.ExportedOnlyFilter) => Obj
     __originalFilter: filter
 });
 
+export function getDeclaration(module: Webpack.Module<any>, filter: Webpack.ExportedOnlyFilter) {
+    const wrappedFilter = wrapDeclarationFilter(filter);
+
+    for (const name in module.declarations) {
+        if (!wrappedFilter(module.declarations[name])) continue;
+        return module.declarations[name];
+    }
+}
+
 const TypedArray = Object.getPrototypeOf(Uint8Array);
 export function shouldSkipModule(exports: any) {
     if (!(typeof exports === "object" || typeof exports === "function")) return true;
