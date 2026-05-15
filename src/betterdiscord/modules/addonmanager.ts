@@ -223,7 +223,7 @@ export default abstract class AddonManager<T extends Addon = Addon> extends Stor
         // Validate that there is a meta comment
         const hasMetaComment = firstLine.includes("/**");
         if (!hasMetaComment) {
-            Modals.showAddonError(new AddonError(filePath, filePath, t("Addons.metaNotFound"), {
+            Modals.showAddonError(new AddonError(filename, filename, t("Addons.metaNotFound"), {
                 message: "",
                 stack: fileContent
             }, this.prefix));

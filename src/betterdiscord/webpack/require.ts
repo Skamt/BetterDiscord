@@ -2,6 +2,7 @@ import type {Webpack} from "discord";
 import Logger from "@common/logger";
 import type {RawModule} from "../types/discord/webpack";
 import Patcher from "@modules/patcher";
+import {getModule} from "./searching";
 
 export let webpackRequire: Webpack.Require;
 
@@ -68,8 +69,9 @@ function listenToModules(modules: Record<PropertyKey, RawModule>) {
 const {promise, resolve} = Promise.withResolvers<void>();
 export const allModulesLoaded = promise;
 
-let loadingModules = 0;
+let loadingModules = 1;
 let moduleLoadTimeout: ReturnType<typeof setTimeout> | null = null;
+
 function onLoadStart() {
     loadingModules++;
     if (moduleLoadTimeout) {
@@ -86,7 +88,7 @@ function onLoadEnd() {
     moduleLoadTimeout = setTimeout(() => {
         resolve();
         Patcher.unpatchAll("WebpackRequire");
-    }, 300);
+    }, 50);
 }
 
 function patchModuleLoading(require: Webpack.Require) {
@@ -123,6 +125,22 @@ window.webpackChunkdiscord_app.push([
         }
     }
 ]);
+
+// Check whether discord has already initialized
+if (performance.getEntriesByName("app_first_render_after_ready_payload").length > 0) {
+    onLoadEnd();
+}
+else {
+    const initModule = getModule<any>(m => m.appFirstRenderAfterReadyPayload);
+    if (initModule) {
+        Patcher.after("WebpackRequire", initModule, "appFirstRenderAfterReadyPayload", onLoadEnd);
+    }
+    else {
+        // Fall back to requestIdleCallback
+        Logger.warn("WebpackModules", "Could not find appFirstRenderAfterReadyPayload");
+        requestIdleCallback(onLoadEnd);
+    }
+}
 
 export const modules = new Proxy({} as Webpack.Require["m"], {
     ownKeys() {return Object.keys(webpackRequire.m);},
