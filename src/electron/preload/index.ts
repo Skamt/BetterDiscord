@@ -2,6 +2,7 @@ import {contextBridge, ipcRenderer} from "electron";
 import newProcess from "./process";
 import * as BdApi from "./api";
 import init from "./init";
+import "./blockSentry";
 import DiscordNativePatch from "./discordnativepatch";
 import * as IPCEvents from "@common/constants/ipcevents";
 
@@ -25,12 +26,3 @@ contextBridge.exposeInMainWorld("BetterDiscordRunRenderer", () => {
 
 init();
 
-const M = require("module");
-const orig = M.prototype.require;
-M.prototype.require = function (id) {
-	if (id.includes("/common/crashReporterSetup")) {
-		console.log(id);
-		return null;
-	}
-	return orig.apply(this, [id]);
-};
