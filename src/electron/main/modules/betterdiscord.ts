@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import electron, { BrowserWindow } from "electron";
+import electron, { BrowserWindow, systemPreferences } from "electron";
 import { spawn } from "child_process";
 
 import ReactDevTools from "./reactdevtools";
@@ -11,10 +11,12 @@ const appPath = electron.app.getAppPath();
 const buildInfoFile = path.resolve(appPath, "..", "build_info.json");
 
 // Locate data path to find transparency settings
-let bdFolder = "";
+export let bdFolder = "";
 if (process.platform === "win32" || process.platform === "darwin") bdFolder = path.join(electron.app.getPath("userData"), "..");
 else bdFolder = process.env.XDG_CONFIG_HOME ? process.env.XDG_CONFIG_HOME : path.join(process.env.HOME!, ".config"); // This will help with snap packages eventually
 bdFolder = path.join(bdFolder, "BetterDiscord") + "/";
+
+const BD_ACCENT_COLOR = "#3E82E5";
 
 export default class BetterDiscord {
 	static _settings: Record<string, Record<string, any>>;
@@ -116,6 +118,21 @@ export default class BetterDiscord {
 		if (!success) return; // TODO: cut a fatal log
 	}
 
+	private static getAccentColor() {
+		if (process.env.BD_ACCENT_COLOR) return process.env.BD_ACCENT_COLOR;
+
+		try {
+			const hex = systemPreferences.getAccentColor();
+			if (!hex) return BD_ACCENT_COLOR;
+
+			// Docs state this doesnt return with # but it does (for me?)
+			if (hex[0] === "#") return hex;
+			return `#${hex}`;
+		} catch {
+			return BD_ACCENT_COLOR;
+		}
+	}
+
 	static setup(browserWindow: BrowserWindow) {
 		// Setup some useful vars to avoid blocking IPC calls
 		try {
@@ -130,6 +147,24 @@ export default class BetterDiscord {
 		process.env.DISCORD_APP_PATH = appPath;
 		process.env.DISCORD_USER_DATA = electron.app.getPath("userData");
 		process.env.BETTERDISCORD_DATA_PATH = bdFolder;
+
+		let promise: Promise<string>;
+		let isAwaiting = false;
+
+		const onChange = async () => {
+			if (isAwaiting) return;
+
+			isAwaiting = true;
+
+			await browserWindow.webContents.removeInsertedCSS(await promise);
+
+			isAwaiting = false;
+
+			promise = browserWindow.webContents.insertCSS(`:root { --os-accent-color: ${this.getAccentColor()}; }`);
+		};
+
+		systemPreferences.on("accent-color-changed", onChange);
+		browserWindow.once("closed", () => systemPreferences.off("accent-color-changed", onChange));
 
 		// When DOM is available, pass the renderer over the wall
 		browserWindow.webContents.on("dom-ready", () => {});
@@ -214,13 +249,9 @@ Object.defineProperty(global, "appSettings", {
 			setting.set("MIN_HEIGHT", 500);
 		}
 
-		delete global.appSettings;
-		global.appSettings = setting;
+		delete (global as any).appSettings;
+		(global as any).appSettings = setting;
 	},
 	configurable: true,
 	enumerable: false
 });
-
-declare global {
-	let appSettings: any;
-}

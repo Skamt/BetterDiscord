@@ -96,13 +96,16 @@ function addToCSP(csp, type) {
 }
 
 export default class {
-    static remove() {
+
+    static async remove() {
+    	await electron.app.whenReady();
         electron.session.defaultSession.webRequest.onHeadersReceived(function(details, callback) {
             const headerKeys = Object.keys(details.responseHeaders);
             for (let h = 0; h < headerKeys.length; h++) {
                 const key = headerKeys[h];
                 
                 // Because the casing is inconsistent for whatever reason...
+
                 if (key.toLowerCase().indexOf("content-security-policy") !== 0) continue;
 
                 // Grab current CSP policy and make sure it's Discord's

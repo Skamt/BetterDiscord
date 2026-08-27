@@ -9,9 +9,9 @@ export default function (dist: string) {
         path.join(dist, "main.js"),
         path.join(dist, "preload.js"),
         path.join(dist, "betterdiscord.js"),
-        path.join(dist, "editor", "preload.js"),
-        path.join(dist, "editor", "script.js"),
-        path.join(dist, "editor", "index.html"),
+        // path.join(dist, "editor", "preload.js"),
+        // path.join(dist, "editor", "script.js"),
+        // path.join(dist, "editor", "index.html"),
     ];
 
     for (const file of files) {
