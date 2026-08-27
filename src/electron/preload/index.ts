@@ -2,7 +2,6 @@ import {contextBridge, ipcRenderer} from "electron";
 import newProcess from "./process";
 import * as BdApi from "./api";
 import init from "./init";
-import "./blockSentry";
 import DiscordNativePatch from "./discordnativepatch";
 import * as IPCEvents from "@common/constants/ipcevents";
 

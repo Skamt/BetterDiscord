@@ -1,7 +1,7 @@
 import {ipcRenderer as IPC, webFrame} from "electron";
 import fs from "fs";
 import path from "path";
-
+import run from "./stringPatchPreload";
 import * as IPCEvents from "@common/constants/ipcevents";
 
 export default function () {
@@ -18,7 +18,8 @@ export default function () {
             const originalKill = process.kill;
             process.kill = function (_: number, __?: string | number | undefined) {return true;};
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            require(preload);
+            // require(preload);
+            run(preload);
             process.kill = originalKill;
         }
         catch {
