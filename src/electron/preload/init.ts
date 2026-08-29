@@ -17,8 +17,6 @@ export default function () {
         try {
             const originalKill = process.kill;
             process.kill = function (_: number, __?: string | number | undefined) {return true;};
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            // require(preload);
             run(preload);
             process.kill = originalKill;
         }
