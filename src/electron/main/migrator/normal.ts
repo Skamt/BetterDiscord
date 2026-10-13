@@ -2,25 +2,11 @@ import {app} from "electron";
 import path from "path";
 import fs from "fs";
 import {comparator} from "@common/semver";
-import {bdFolder} from "./modules/betterdiscord";
-import {randomUUID} from "crypto";
+import {EventEmitter} from "events";
 
-const supported: NodeJS.Platform[] = [
-    "win32",
-    "linux"
-];
+const {log} = console;
 
 function migrate() {
-    if (!supported.includes(process.platform)) return;
-
-    const logPath = path.join(bdFolder, "data", "updater.log");
-    const uuid = randomUUID();
-
-    const log = (content: string) => {
-        if (process.env.__BUILD__ === "production") return;
-        fs.appendFileSync(logPath, `[id=${uuid},time=${Date.now()}]: ${content}\n`);
-    };
-
     try {
         const base = path.dirname(process.execPath);
 
@@ -68,4 +54,16 @@ require("../betterdiscord.app.asar");
     }
 }
 
-app.on("before-quit", migrate);
+export function init() {
+    app.on("before-quit", () => migrate());
+
+    EventEmitter.prototype.emit = new Proxy(EventEmitter.prototype.emit, {
+        apply(target, thisArg, argArray) {
+            if (argArray[0] === "host-updated") {
+                migrate();
+            }
+
+            return Reflect.apply(target, thisArg, argArray);
+        },
+    });
+}
