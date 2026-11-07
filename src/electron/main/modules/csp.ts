@@ -7,7 +7,8 @@ const whitelist = {
 	],
 
 	connect:[
-		"https://api.github.com"
+		"https://api.github.com",
+		"https://raw.githubusercontent.com/facebook/react/*",
 	],
     // Discord includes unsafe-inline already
     script: [
